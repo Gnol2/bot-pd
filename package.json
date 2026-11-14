@@ -1,0 +1,19 @@
+{
+  "name": "botpd",
+  "version": "1.0.0",
+  "description": "Bot Discord GCPD - ghi log vào Google Sheets và giám sát nghiệp vụ",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node scripts/check.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0"
+  }
+}
