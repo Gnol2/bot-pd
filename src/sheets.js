@@ -93,10 +93,22 @@ export class Worksheet {
     return this.appendRows([row], valueInputOption);
   }
 
-  async clear() {
+  // range: phần sau dấu "!" (vd "A2:I"); bỏ trống = xoá cả trang
+  async clear(range) {
     await this.api.spreadsheets.values.clear({
       spreadsheetId: this.spreadsheetId,
-      range: this.a1,
+      range: range ? `${this.a1}!${range}` : this.a1,
+    });
+  }
+
+  // Ghi một khối hình chữ nhật trong 1 request, bắt đầu từ ô startA1 (vd "A2")
+  async updateRange(startA1, values, valueInputOption = 'RAW') {
+    if (!values || !values.length) return;
+    await this.api.spreadsheets.values.update({
+      spreadsheetId: this.spreadsheetId,
+      range: `${this.a1}!${startA1}`,
+      valueInputOption,
+      requestBody: { values },
     });
   }
 
@@ -108,6 +120,27 @@ export class Worksheet {
       },
     });
     this.rowCount += n;
+  }
+
+  // Mở rộng lưới (thêm hàng/cột) nếu nhỏ hơn kích thước cần ghi. Đọc kích thước thật từ API vì cache có thể cũ.
+  async ensureSize(rows, cols) {
+    const res = await this.api.spreadsheets.get({ spreadsheetId: this.spreadsheetId, fields: 'sheets.properties' });
+    const props = (res.data.sheets ?? []).map((s) => s.properties).find((p) => p.sheetId === this.sheetId);
+    if (props) {
+      this.rowCount = props.gridProperties?.rowCount ?? this.rowCount;
+      this.colCount = props.gridProperties?.columnCount ?? this.colCount;
+    }
+    const requests = [];
+    if (rows > this.rowCount) {
+      requests.push({ appendDimension: { sheetId: this.sheetId, dimension: 'ROWS', length: rows - this.rowCount } });
+    }
+    if (cols > this.colCount) {
+      requests.push({ appendDimension: { sheetId: this.sheetId, dimension: 'COLUMNS', length: cols - this.colCount } });
+    }
+    if (!requests.length) return;
+    await this.api.spreadsheets.batchUpdate({ spreadsheetId: this.spreadsheetId, requestBody: { requests } });
+    this.rowCount = Math.max(this.rowCount, rows);
+    this.colCount = Math.max(this.colCount, cols);
   }
 }
 
