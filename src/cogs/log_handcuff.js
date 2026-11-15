@@ -1,5 +1,5 @@
 import { Cog } from '../core/Cog.js';
-import { ROOMS, SHEET_IDS } from '../config.js';
+import { ROOMS, SHEET_IDS, alertRoom } from '../config.js';
 import { S, fmt, toVN, vnToUtc, parseDMY, addMs, hasRole, history } from '../utils.js';
 
 const COP_RE = /Cảnh sát:\s*(.*?)\s*\(\s*ID:\s*(\d+)\s*\)/i;
@@ -73,10 +73,10 @@ export default class LogHandcuff extends Cog {
           ? `Cảnh sát **${targetRow[1]} | ${targetId} | ${targetRow[3]}**`
           : `người dân **${targetName}** (ID: **${targetId}**)`;
 
-        const alert = this.bot.channels.cache.get(ROOMS.VI_PHAM);
         const footer = '\n*Hệ thống ghi nhận, cần chú ý theo dõi thêm.*';
 
         if (!copRow) {
+          const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_NGOAI'));
           if (alert) {
             await alert.send(
               `📝 **THÔNG BÁO GIÁM SÁT**\n` +
@@ -89,6 +89,7 @@ export default class LogHandcuff extends Cog {
 
         const copDuty = S(copRow[7]);
         if (copDuty === '') {
+          const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_OFFDUTY'));
           if (alert) {
             await alert.send(
               `📝 **THÔNG BÁO GIÁM SÁT**\n` +

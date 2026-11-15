@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
-import { ROOMS } from '../config.js';
+import { ROOMS, alertRoom } from '../config.js';
 import {
   S, cell, fmt, toVN, nowVN, vnToUtc, addMs, HOUR_MS, endOfDay, parseDMY, parseYMDHMS, uniq,
   hasRole, roleMention, callsignOf, history, sanitizeVal, COLORS,
@@ -86,8 +86,9 @@ export default class LogIncident extends Cog {
       this.alertedKeys.add(key);
       if (this.alertedKeys.size > 500) this.alertedKeys.clear();
 
-      const vp = this.bot.channels.cache.get(ROOMS.VI_PHAM);
-      if (!vp) return console.error(`⚠️ Không tìm thấy phòng cảnh báo vi phạm ID ${ROOMS.VI_PHAM}`);
+      const vpId = alertRoom('VP_SUA_MDT');
+      const vp = this.bot.channels.cache.get(vpId);
+      if (!vp) return console.error(`⚠️ Không tìm thấy phòng cảnh báo sửa MDT ID ${vpId}`);
 
       const guild = vp.guild;
       const violator = this.resolveViolatorMention(guild, nguoiThucHien);

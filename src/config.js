@@ -32,7 +32,17 @@ export const ROOMS = {
   CLOCKOUT: '1414548963247390770',
   DISPATCH: '1518939026391040050',
   PHONGVAN: '1571029642377429114',
+
+  // Kênh riêng cho từng loại cảnh báo vi phạm. Để trống '' = gửi vào VI_PHAM như cũ.
+  VP_MOMO_LA: '1571438806639579216', // Momo lạ vừa OnDuty (log_nhansu)
+  VP_CONG_NGOAI: '1571438872410198157', // Người ngoài danh sách dùng còng tay (log_handcuff)
+  VP_CONG_OFFDUTY: '1571438920007155732', // Cảnh sát OFF DUTY dùng còng tay (log_handcuff)
+  VP_SUA_MDT: '1571438967566377001', // Chỉnh sửa MDT trái phép (log_incident)
+  VP_DAM: '1571439008222023693', // Danh sách vi phạm đàm cuối ngày (check_dam)
 };
+
+// Lấy ID kênh cảnh báo: dùng kênh riêng nếu đã điền, không thì rơi về VI_PHAM
+export const alertRoom = (key) => ROOMS[key] || ROOMS.VI_PHAM;
 
 export const FIREBASE_URL =
   'https://dispatch-gcpd-default-rtdb.asia-southeast1.firebasedatabase.app/latest_dispatch.json';

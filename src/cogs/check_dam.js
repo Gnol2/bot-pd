@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
-import { ROOMS } from '../config.js';
+import { ROOMS, alertRoom } from '../config.js';
 import {
   S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isTopBoss, roleMention,
   csToMemberMap, history, cleanRadio, sendTemp,
@@ -591,7 +591,7 @@ export default class CheckDam extends Cog {
         await ch113.send({ embeds: [embed] });
       }
 
-      const chVp = this.bot.channels.cache.get(ROOMS.VI_PHAM);
+      const chVp = this.bot.channels.cache.get(alertRoom('VP_DAM'));
       if (chVp) {
         const vpList = [];
         for (const [cs, d] of Object.entries(this.radioMemory)) {

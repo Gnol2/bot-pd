@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { Cog } from '../core/Cog.js';
-import { ROOMS } from '../config.js';
+import { ROOMS, alertRoom } from '../config.js';
 import { S, cell, fmt, toVN, nowVN, vnToUtc, endOfDay, parseDMY, addMs, HOUR_MS, hasRole, roleMention, history, cleanRadio } from '../utils.js';
 
 const MEMORY_FILE = 'nhansu_radio_memory.json';
@@ -99,7 +99,7 @@ export default class LogNhanSu extends Cog {
   // CÒI BÁO ĐỘNG SĨ QUAN LẠ
   // ==========================================
   async alertUnknownOfficers(latestDuty, existingPids, newOfficers) {
-    const vp = this.bot.channels.cache.get(ROOMS.VI_PHAM);
+    const vp = this.bot.channels.cache.get(alertRoom('VP_MOMO_LA'));
     if (!vp) return;
     const pings = `${roleMention(vp.guild, 'Sở Trưởng Cảnh Sát')} ${roleMention(vp.guild, 'Sở Phó Cảnh Sát')}`;
     const now = Date.now();
