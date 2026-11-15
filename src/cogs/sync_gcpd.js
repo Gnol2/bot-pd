@@ -109,6 +109,14 @@ export default class SyncGCPD extends Cog {
       if (!data.length) return [false, 'Bảng GCPD HOME hiện đang trống, không có gì để copy!'];
 
       await this.copyToDanhSach(data);
+
+      // Tab Online tự điền bằng công thức (QUERY/IMPORTRANGE) -> tuyệt đối không ghi đè
+      if (await this.bot.sheets.online.hasFormulas('A2:G')) {
+        return [
+          true,
+          `Đã đồng bộ **${data.length} dòng** sang \`Danh-Sach-PD\`. Tab \`Online\` đang tự cập nhật bằng công thức nên bot không ghi đè.`,
+        ];
+      }
       const o = await this.syncOnline(data);
 
       return [

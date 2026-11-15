@@ -9,6 +9,19 @@ import {
 const MEDALS = ['🥇', '🥈', '🥉', '**#4**', '**#5**', '**#6**', '**#7**', '**#8**', '**#9**', '**#10**'];
 const EXEMPT_ROLES = ['Hội Đồng Ủy Ban', 'Giảng Viên', 'Tòa Thị Chính', 'Uỷ Viên Chính Phủ', 'FTO'];
 
+// Nhận diện form tab tuần theo số cột tiêu đề:
+//  v1 = 12 cột (form rất cũ), v2 = 25 cột, v3 = 32 cột (form hiện tại: Chức vụ, Lập/Tham gia MDT, Thưởng OT, FTO, Đền bù bay...)
+const kpiFormat = (header) => (!header ? 'v1' : header.length >= 30 ? 'v3' : header.length >= 15 ? 'v2' : 'v1');
+const KPI_COL = { v1: 6, v2: 12, v3: 5 }; // cột tổng vụ án / KPI tuần
+const TONG_COL = { v1: 11, v2: 24, v3: 31 }; // cột tổng thưởng
+
+function moneyNum(row, idx) {
+  const clean = [...String(row[idx] ?? '')].filter((c) => /[0-9-]/.test(c)).join('');
+  const val = parseInt(clean, 10);
+  return Number.isNaN(val) ? 0 : val;
+}
+const fmtMoney = (val) => (val >= 0 ? `$${money(val)}` : `-$${money(Math.abs(val))}`);
+
 function parseMoneyFromRow(row, idx) {
   if (row.length > idx) {
     const clean = [...String(row[idx])].filter((c) => /[0-9-]/.test(c)).join('');
@@ -104,12 +117,12 @@ export default class KPI extends Cog {
       const momoToCs = new Map();
       const topKpi = [];
       const k = await this.fetchKpiData(w.sheetName);
-      const newFmt = k.length ? k[0].length >= 15 : false; // Form cũ 12 cột, form mới 25 cột
+      const kCol = KPI_COL[kpiFormat(k[0])];
 
       for (const row of k.slice(1)) {
         const cn = S(at(row, 0));
         const mid = S(at(row, 1));
-        const kn = newFmt ? toInt(at(row, 12)) : toInt(at(row, 6));
+        const kn = toInt(at(row, kCol));
         if (mid && cn) momoToCs.set(mid, cn);
         if (kn > 0) {
           const act = momoToCurrentCs.get(mid) ?? cn;
@@ -214,7 +227,8 @@ export default class KPI extends Cog {
       }
 
       const k = await this.fetchKpiData(w.sheetName);
-      const newFmt = k.length ? k[0].length >= 15 : false;
+      const form = kpiFormat(k[0]);
+      const newFmt = form === 'v2';
 
       for (const row of k.slice(1)) {
         const match =
@@ -236,7 +250,11 @@ export default class KPI extends Cog {
         const gioiTinh = gioiTinhRaw === 'NỮ' ? 'Nữ ♀️' : 'Nam ♂️';
 
         let gioTrucRaw, ngayTruc, kNum, mdtMatDat, blhtTong, blhtLap, blhtHtro;
-        if (newFmt) {
+        if (form === 'v3') {
+          gioTrucRaw = S(at(row, 13)).replace(',', '.') || '0';
+          ngayTruc = toInt(at(row, 14));
+          kNum = toInt(at(row, 5));
+        } else if (newFmt) {
           gioTrucRaw = row.length > 10 ? S(row[10]).replace(',', '.') : '0';
           ngayTruc = toInt(at(row, 11));
           kNum = toInt(at(row, 12));
@@ -253,8 +271,9 @@ export default class KPI extends Cog {
         let gioTruc = Number(gioTrucRaw);
         if (!gioTrucRaw || Number.isNaN(gioTruc)) gioTruc = 0;
 
-        const wt = newFmt
-          ? Array.from({ length: 7 }, (_, i) => parseWeeklyTime(at(row, 13 + i) || '0'))
+        const wtStart = form === 'v3' ? 15 : 13;
+        const wt = form !== 'v1'
+          ? Array.from({ length: 7 }, (_, i) => parseWeeklyTime(at(row, wtStart + i) || '0'))
           : Array(7).fill('0');
 
         const moneyIdx = newFmt ? [20, 21, 22, 23, 24] : [7, 8, 9, 10, 11];
@@ -267,10 +286,10 @@ export default class KPI extends Cog {
             const prev = await this.fetchKpiData(sName);
             if (prev && prev.length) {
               prevDisplay = sName;
-              const prevNew = prev[0].length >= 15;
+              const prevTong = TONG_COL[kpiFormat(prev[0])];
               for (const p of prev.slice(1)) {
                 if (p.length > 1 && S(p[1]) === mid) {
-                  thuongTuanTruoc = parseMoneyFromRow(p, prevNew ? 24 : 11);
+                  thuongTuanTruoc = parseMoneyFromRow(p, prevTong);
                   break;
                 }
               }
@@ -289,26 +308,47 @@ export default class KPI extends Cog {
         const targetNgay = isNu ? 5 * 0.5 : 5;
 
         let desc = `👮 **Sĩ Quan:** ${targetDisplay}\n`;
+        if (form === 'v3' && S(at(row, 3))) desc += `🎖️ **Chức vụ:** ${S(at(row, 3))}\n`;
         desc += `🆔 **Momo:** ${mid}\n`;
         desc += `🚻 **Giới tính:** ${gioiTinh}\n\n`;
         desc += '📋 ** CHỈ TIÊU TUẦN CẦN HOÀN THÀNH **\n';
         desc += `• Thời gian trực : \`${fmtG(gioTruc)} / ${fmtG(targetGio)}\` giờ\n`;
-        if (newFmt) desc += `  *(T2: ${wt[0]} | T3: ${wt[1]} | T4: ${wt[2]} | T5: ${wt[3]} | T6: ${wt[4]} | T7: ${wt[5]} | CN: ${wt[6]})*\n`;
+        if (form !== 'v1') desc += `  *(T2: ${wt[0]} | T3: ${wt[1]} | T4: ${wt[2]} | T5: ${wt[3]} | T6: ${wt[4]} | T7: ${wt[5]} | CN: ${wt[6]})*\n`;
         desc += `• Số ngày trực :   \`${ngayTruc} / ${fmtG(targetNgay)}\` ngày\n`;
         desc += `• Vụ án MDT :   \`${kNum} / ${targetVu}\` vụ\n`;
-        if (newFmt) {
+        if (form === 'v3') {
+          const n = (i) => toInt(at(row, i));
+          desc += `  ↳ *Lập MDT: ${n(6)} - Hỗ trợ: ${n(7)}*\n`;
+          desc += `  ↳ *Chi tiết BLHT: Tổng ${n(10)} (Lập: ${n(11)}, Hỗ trợ: ${n(12)})*\n`;
+          desc += `  ↳ *Chi tiết Mặt đất: Tổng ${n(8) + n(9)} (Lập: ${n(8)}, Hỗ trợ: ${n(9)})*\n`;
+        } else if (newFmt) {
           desc += `  ↳ *BLHT: ${blhtTong} (Lập: ${blhtLap}, Hỗ trợ: ${blhtHtro})*\n`;
           desc += `  ↳ *Mặt đất: ${mdtMatDat}*\n`;
         }
         desc += '\n';
         desc += '💰 ** LƯƠNG THƯỞNG **\n';
-        desc += `• Chuyên cần + Trách nhiệm + KPI :  \`${thuongKpi}\`\n`;
-        desc += `• Thưởng 113 :     \`${thuong113}\`\n`;
-        desc += `• Thưởng Đội Bay :     \`${thuongBay}\`\n`;
-        desc += `• Bổ sung :        \`${thuongBoSung}\`\n`;
-        desc += '────────────────────\n';
-        desc += `💵 **TỔNG NHẬN (${w.sheetName}) : ${thuongTong}**\n`;
-        desc += `📆 **Lương tuần trước (${prevDisplay}): ${thuongTuanTruoc}**\n\n`;
+        if (form === 'v3') {
+          const m = (i) => fmtMoney(moneyNum(row, i));
+          desc += `• Chuyên cần : \`${m(23)}\`\n`;
+          desc += `• Thưởng OT : \`${m(22)}\`\n`;
+          desc += `• Trách nhiệm + Phụ cấp : \`${fmtMoney(moneyNum(row, 24) + moneyNum(row, 27))}\`\n`;
+          desc += `• Thưởng KPI : \`${m(25)}\`\n`;
+          if (moneyNum(row, 26)) desc += `• Thưởng FTO : \`${m(26)}\`\n`;
+          desc += `• Thưởng MDT BLHT : \`${m(28)}\`\n`;
+          desc += `• Bồi Thường BLHT : \`${m(29)}\`\n`;
+          desc += `• Bổ sung : \`${m(30)}\`\n`;
+          desc += '────────────────────\n';
+          desc += `💵 **TỔNG NHẬN (${w.sheetName}) : ${m(31)}**\n`;
+          desc += `📆 **Thưởng tuần trước (${prevDisplay}): ${thuongTuanTruoc}**\n\n`;
+        } else {
+          desc += `• Chuyên cần + Trách nhiệm + KPI :  \`${thuongKpi}\`\n`;
+          desc += `• Thưởng 113 :     \`${thuong113}\`\n`;
+          desc += `• Thưởng Đội Bay :     \`${thuongBay}\`\n`;
+          desc += `• Bổ sung :        \`${thuongBoSung}\`\n`;
+          desc += '────────────────────\n';
+          desc += `💵 **TỔNG NHẬN (${w.sheetName}) : ${thuongTong}**\n`;
+          desc += `📆 **Lương tuần trước (${prevDisplay}): ${thuongTuanTruoc}**\n\n`;
+        }
 
         const embed = new EmbedBuilder()
           .setTitle(`📊 BÁO CÁO TUẦN : ${w.sheetName}` + (searchKey === 'MOMO' ? ' (TRA CỨU)' : ''))
@@ -337,14 +377,14 @@ export default class KPI extends Cog {
     try {
       await ctx.send(`⏳ **RADAR TRUY QUÉT SĨ QUAN 0 KPI (${currSheet})...**`);
       const data = await this.fetchKpiData(currSheet);
-      const newFmt = data.length ? data[0].length >= 15 : false;
+      const kCol = KPI_COL[kpiFormat(data[0])];
 
       const slackers = [];
       for (const row of data.slice(1)) {
         // FIX: bản Python dùng lại giá trị của dòng trước khi dòng hiện tại thiếu cột
-        if (row.length < (newFmt ? 13 : 7)) continue;
+        if (row.length <= kCol) continue;
         const cn = S(row[0]);
-        const kn = toInt(row[newFmt ? 12 : 6]);
+        const kn = toInt(row[kCol]);
         if (!cn || kn !== 0) continue;
         const m = layMemberTheoCallsign(ctx.guild, cn);
         if (!m) continue;

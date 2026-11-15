@@ -4,7 +4,7 @@ export const PREFIX = '!';
 // GOOGLE SPREADSHEET IDs
 // ==========================================
 export const SHEET_IDS = {
-  MAIN: '15U99k3vOAefJuTCiiGqFz-OZMhUOSd2_hNQRmfSI1rk', // File chính (Online, Hoa-Don, Incident...)
+  MAIN: '1OQNQWjXuZ8wOd926L4WjR2BFabQjZ4x-GAT72E6nOb0', // File chính "GCPD DATA" (Online, Hoa-Don, Incident, tab KPI tuần...)
   HOME: '17khpbSoq5CvPDqJAsBD1oSbveM-O6Z_EgfxIi6Topmo', // GCPD HOME, Dispatch
   PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng  
 };

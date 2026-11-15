@@ -29,6 +29,16 @@ export class Worksheet {
     return quoteTitle(this.title);
   }
 
+  // Có ô nào trong vùng (vd 'B2:G') đang là công thức không
+  async hasFormulas(range) {
+    const res = await this.api.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: `${this.a1}!${range}`,
+      valueRenderOption: 'FORMULA',
+    });
+    return (res.data.values ?? []).some((r) => r.some((v) => String(v).startsWith('=')));
+  }
+
   // Giống gspread.get_all_values(): mọi hàng được đệm cho bằng độ dài hàng dài nhất
   async getAllValues() {
     const res = await this.api.spreadsheets.values.get({
