@@ -3,8 +3,7 @@ import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, alertRoom } from '../config.js';
 import {
-  S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isTopBoss, roleMention,
-  csToMemberMap, history, cleanRadio, sendTemp,
+  S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isBotAdmin, roleMention, csToMemberMap, history, cleanRadio, sendTemp, NO_PERM,
 } from '../utils.js';
 
 const IMMUNE_MOMO = ['23', '12678', '12510', '3840', '20444']; // Không lưu data
@@ -295,7 +294,7 @@ export default class CheckDam extends Cog {
   // ==========================================
   async updateChucVu(ctx) {
     const a = ctx.author;
-    if (!(hasRole(a, 'Hội Đồng Ủy Ban') || hasRole(a, 'Sở Trưởng Cảnh Sát') || hasRole(a, 'Sở Phó Cảnh Sát'))) {
+    if (!isBotAdmin(a)) {
       return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     }
     const msg = await ctx.send('⏳ **Đang đồng bộ chức vụ từ Sheet GCPD HOME xuống bộ nhớ JSON...**');
@@ -519,7 +518,7 @@ export default class CheckDam extends Cog {
   // ==========================================
   async adjust113(ctx, identifier, minutesStr, mode) {
     // FIX: bản Python ở sub113 gõ nhầm tên role "S Sở Trưởng Cảnh Sát"
-    if (!isTopBoss(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     if (!identifier || !/^-?\d+$/.test(minutesStr ?? '')) {
       return ctx.send(`⚠️ Cú pháp: \`!${mode}113 <callsign|momo> <số phút>\``);
     }

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, alertRoom } from '../config.js';
-import { S, cell, fmt, toVN, nowVN, vnToUtc, endOfDay, parseDMY, addMs, HOUR_MS, hasRole, roleMention, history, cleanRadio } from '../utils.js';
+import { S, cell, fmt, toVN, nowVN, vnToUtc, endOfDay, parseDMY, addMs, HOUR_MS, hasRole, roleMention, history, cleanRadio, isBotAdmin, NO_PERM } from '../utils.js';
 
 const MEMORY_FILE = 'nhansu_radio_memory.json';
 const PID_RE = /(?:PLAYER\s*ID|ID)[\s:]*\n?(\d+)/; // chạy trên text đã viết hoa
@@ -276,7 +276,7 @@ export default class LogNhanSu extends Cog {
   // !updateduty [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateDuty(ctx, fromStr, toStr) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     const range = await this.parseRange(ctx, fromStr, toStr, 'Duty', 'updateduty');
     if (!range) return;
 
@@ -322,7 +322,7 @@ export default class LogNhanSu extends Cog {
   // !updateradio [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateRadio(ctx, fromStr, toStr) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     const range = await this.parseRange(ctx, fromStr, toStr, 'Radio', 'updateradio');
     if (!range) return;
 

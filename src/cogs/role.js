@@ -1,6 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { cell, hasRole, history } from '../utils.js';
+import { cell, hasRole, history, isBotAdmin, NO_PERM } from '../utils.js';
 
 // Log Thay đổi chức vụ / Sa thải -> cập nhật sheet GCPD HOME (C = ID, D = Tên, H = Chức vụ)
 export default class Role extends Cog {
@@ -128,7 +128,7 @@ export default class Role extends Cog {
   }
 
   async updateRole(ctx, limitArg) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     const limit = limitArg && /^\d+$/.test(limitArg) ? parseInt(limitArg, 10) : 1000;
 
     await ctx.send(`⏳ **Radar đang quét ${limit} log Thay Đổi Chức Vụ/Sa Thải gần nhất...**`);

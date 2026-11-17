@@ -1,6 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { cell, hasRole, history, nowVN, addMs, DAY_MS, startOfDay, endOfDay, parseDMY, fmt, vnToUtc, parseBillEmbed } from '../utils.js';
+import { cell, hasRole, history, nowVN, addMs, DAY_MS, startOfDay, endOfDay, parseDMY, fmt, vnToUtc, parseBillEmbed, isBotAdmin, NO_PERM } from '../utils.js';
 
 // Hóa đơn PD "Chưa thanh toán" -> sheet Hoa-Don (gom 10 giây / chuyến)
 export default class HoaDon extends Cog {
@@ -39,7 +39,7 @@ export default class HoaDon extends Cog {
 
   // !updatehoadon [dd/mm/yyyy] [dd/mm/yyyy]
   async updateHoaDon(ctx, fromStr, toStr) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
 
     const now = nowVN();
     let fromDate, toDate;

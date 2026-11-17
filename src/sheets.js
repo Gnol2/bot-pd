@@ -122,6 +122,12 @@ export class Worksheet {
     });
   }
 
+  // Gửi thẳng các request định dạng (merge, tô màu, độ rộng cột...) của Sheets API cho tab này
+  async batch(requests) {
+    if (!requests.length) return;
+    await this.api.spreadsheets.batchUpdate({ spreadsheetId: this.spreadsheetId, requestBody: { requests } });
+  }
+
   async addRows(n) {
     await this.api.spreadsheets.batchUpdate({
       spreadsheetId: this.spreadsheetId,
@@ -185,5 +191,22 @@ export class SheetsClient {
     const ws = new Worksheet(this.api, spreadsheetId, props);
     this._ws.set(key, ws);
     return ws;
+  }
+
+  // Lấy tab, chưa có thì tạo mới. Trả về [worksheet, vừaTạo]
+  async ensureWorksheet(spreadsheetId, title, { rows = 1000, cols = 26, frozenRows = 1 } = {}) {
+    try {
+      return [await this.worksheet(spreadsheetId, title), false];
+    } catch (e) {
+      if (!String(e.message).includes('Không tìm thấy worksheet')) throw e;
+    }
+    await this.api.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{ addSheet: { properties: { title, gridProperties: { rowCount: rows, columnCount: cols, frozenRowCount: frozenRows } } } }],
+      },
+    });
+    this._meta.delete(spreadsheetId);
+    return [await this.worksheet(spreadsheetId, title, { refresh: true }), true];
   }
 }

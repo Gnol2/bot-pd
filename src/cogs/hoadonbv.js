@@ -1,6 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS, SHEET_IDS } from '../config.js';
-import { hasRole, nowVN, addMs, DAY_MS, startOfDay, endOfDay, parseDMY, fmt, parseBillEmbed } from '../utils.js';
+import { hasRole, nowVN, addMs, DAY_MS, startOfDay, endOfDay, parseDMY, fmt, parseBillEmbed, isBotAdmin, NO_PERM } from '../utils.js';
 import { backfillBills } from './hoadon.js';
 
 // Hóa đơn Bệnh viện "Chưa thanh toán" -> sheet Hoa-Don-BV
@@ -45,7 +45,7 @@ export default class HoaDonBV extends Cog {
   }
 
   async updateHoaDonBV(ctx, fromStr, toStr) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
 
     const now = nowVN();
     let fromDate, toDate;

@@ -1,10 +1,9 @@
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { cell, COLORS, history, nowVN, toVN, vnToUtc, addMs, DAY_MS, startOfDay, endOfDay, weekday, fmt, parseDMY } from '../utils.js';
+import { cell, COLORS, history, nowVN, toVN, vnToUtc, addMs, DAY_MS, startOfDay, endOfDay, weekday, fmt, parseDMY, isBotAdmin } from '../utils.js';
 
 const DAYS_VN = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
-const ALLOWED_ROLES = ['Hội Đồng Ủy Ban', 'Ủy ban GCPD'];
 const PLANE = 'hoạt động buôn hàng trắng bằng máy bay';
 
 // Bản đồ cột ghi vào sheet Dispatch (A=0 ... P=15)
@@ -63,7 +62,7 @@ export default class Dispatch extends Cog {
   }
 
   hasPerm(member) {
-    return member.roles.cache.some((r) => ALLOWED_ROLES.includes(r.name));
+    return isBotAdmin(member);
   }
 
   // Đọc tham số ngày; mặc định = hôm qua. Trả về { start, end, title } hoặc null nếu sai định dạng

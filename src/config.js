@@ -1,12 +1,16 @@
 export const PREFIX = '!';
 
+// Role được dùng toàn bộ lệnh quản lý của bot (đổi tên role trên Discord thì sửa ở đây)
+export const BOT_ADMIN_ROLE = 'PD bot admin';
+
 // ==========================================
 // GOOGLE SPREADSHEET IDs
 // ==========================================
 export const SHEET_IDS = {
   MAIN: '1OQNQWjXuZ8wOd926L4WjR2BFabQjZ4x-GAT72E6nOb0', // File chính "GCPD DATA" (Online, Hoa-Don, Incident, tab KPI tuần...)
   HOME: '17khpbSoq5CvPDqJAsBD1oSbveM-O6Z_EgfxIi6Topmo', // GCPD HOME, Dispatch
-  PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng  
+  PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng
+  LUONG: '1ec1PDrI9V4hlQCWf_1KRApeEpX3FVkJdTftSUClNnqU', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
 };
 
 // ==========================================
@@ -32,6 +36,8 @@ export const ROOMS = {
   CLOCKOUT: '1414548963247390770',
   DISPATCH: '1518939026391040050',
   PHONGVAN: '1571029642377429114',
+
+  DANG_KY_CA: '1571551051318829086', // Kênh dùng lệnh đăng ký ca trực (!dangky, !huyca, !lichtruc...). Để trống '' = dùng ở mọi kênh
 
   // Kênh riêng cho từng loại cảnh báo vi phạm. Để trống '' = gửi vào VI_PHAM như cũ.
   VP_MOMO_LA: '1571438806639579216', // Momo lạ vừa OnDuty (log_nhansu)
@@ -70,4 +76,6 @@ export const COGS = [
   'sync_gcpd',
   'dispatch_gcpd',
   'log_nhansu',
+  'dangky_ca',
+  'cham_cong',
 ];

@@ -1,6 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS, SHEET_IDS, alertRoom } from '../config.js';
-import { S, fmt, toVN, vnToUtc, parseDMY, addMs, hasRole, history } from '../utils.js';
+import { S, fmt, toVN, vnToUtc, parseDMY, addMs, hasRole, history, isBotAdmin, NO_PERM } from '../utils.js';
 
 const COP_RE = /Cảnh sát:\s*(.*?)\s*\(\s*ID:\s*(\d+)\s*\)/i;
 const TARGET_RE = /Đã còng:\s*(.*?)\s*\(\s*ID:\s*(\d+)\s*\)/i;
@@ -106,8 +106,8 @@ export default class LogHandcuff extends Cog {
 
   // !congtay <ID> dd/mm-dd/mm
   async congtay(ctx, copId, dateRange) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) {
-      return ctx.send('❌ TỪ CHỐI LỆNH: Chỉ Hội Đồng Ủy Ban mới có thẩm quyền truy xuất dữ liệu này!');
+    if (!isBotAdmin(ctx.author)) {
+      return ctx.send(NO_PERM);
     }
     if (!copId || !dateRange || !dateRange.includes('-')) {
       return ctx.send('⚠️ **Cú pháp sai!** Vui lòng gõ theo mẫu: `!congtay <ID> ngày/tháng-ngày/tháng`');

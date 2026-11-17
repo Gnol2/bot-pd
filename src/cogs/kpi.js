@@ -2,8 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, SHEET_IDS } from '../config.js';
 import {
-  S, at, toInt, cleanMoney, isDigits, money, fmtG, nowVN, addMs, DAY_MS, parseDMY, parseYMDHMS,
-  weekSheetName, currentWeekStartVN, isTopBoss, callsignOf, layIdTheoCallsign, layMemberTheoCallsign, COLORS,
+  S, at, toInt, cleanMoney, isDigits, money, fmtG, nowVN, addMs, DAY_MS, parseDMY, parseYMDHMS, weekSheetName, currentWeekStartVN, isBotAdmin, callsignOf, layIdTheoCallsign, layMemberTheoCallsign, COLORS, NO_PERM,
 } from '../utils.js';
 
 const MEDALS = ['🥇', '🥈', '🥉', '**#4**', '**#5**', '**#6**', '**#7**', '**#8**', '**#9**', '**#10**'];
@@ -89,7 +88,7 @@ export default class KPI extends Cog {
   // ==========================================
   async top(ctx, sheetNameArg) {
     if (ctx.channel.id !== ROOMS.KPI) return;
-    if (!isTopBoss(ctx.author)) return ctx.send('❌ Đồng chí không có quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ Đồng chí không có quyền!');
 
     const nowMs = Date.now();
     if (this.lastTopTime && nowMs - this.lastTopTime < 10_000) {
@@ -194,7 +193,7 @@ export default class KPI extends Cog {
       }
     }
 
-    if (targetMomo && !isTopBoss(ctx.author)) {
+    if (targetMomo && !isBotAdmin(ctx.author)) {
       return ctx.reply('❌ **TỪ CHỐI TRUY CẬP:** Sĩ quan không có thẩm quyền kiểm tra KPI của người khác!');
     }
 
@@ -371,7 +370,7 @@ export default class KPI extends Cog {
   // ==========================================
   async lamviec(ctx) {
     if (ctx.channel.id !== ROOMS.KPI) return;
-    if (!isTopBoss(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
 
     const currSheet = weekSheetName(currentWeekStartVN());
     try {

@@ -1,6 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { SHEET_IDS } from '../config.js';
-import { S, cell, nowVN, fmt, hasRole } from '../utils.js';
+import { S, cell, nowVN, fmt, hasRole, isBotAdmin, NO_PERM } from '../utils.js';
 
 // Cột của GCPD HOME (dò theo tiêu đề; nếu không thấy thì dùng vị trí mặc định, 0-indexed)
 const HOME_COLS = {
@@ -137,7 +137,7 @@ export default class SyncGCPD extends Cog {
 
   async forceSync(ctx) {
     const m = ctx.author;
-    if (!(hasRole(m, 'Hội Đồng Ủy Ban') || hasRole(m, 'Sở Trưởng Cảnh Sát') || hasRole(m, 'Sở Phó Cảnh Sát'))) {
+    if (!isBotAdmin(m)) {
       return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
     }
     const alert = await ctx.send('⏳ Đang đồng bộ `GCPD HOME` → `Danh-Sach-PD` + `Online`...');

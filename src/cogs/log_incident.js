@@ -2,8 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, alertRoom } from '../config.js';
 import {
-  S, cell, fmt, toVN, nowVN, vnToUtc, addMs, HOUR_MS, endOfDay, parseDMY, parseYMDHMS, uniq,
-  hasRole, roleMention, callsignOf, history, sanitizeVal, COLORS,
+  S, cell, fmt, toVN, nowVN, vnToUtc, addMs, HOUR_MS, endOfDay, parseDMY, parseYMDHMS, uniq, hasRole, roleMention, callsignOf, history, sanitizeVal, COLORS, isBotAdmin, NO_PERM,
 } from '../utils.js';
 
 const MAX_EDIT_SECONDS = 6 * 3600; // Tác giả được sửa MDT trong 6 giờ
@@ -367,7 +366,7 @@ export default class LogIncident extends Cog {
 
   // !updateincident [dd/mm/yyyy] [dd/mm/yyyy]
   async updateIncident(ctx, fromStr, toStr) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
 
     const now = nowVN();
     let from, to;

@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { SheetsClient } from './sheets.js';
 import { PREFIX, SHEET_IDS, ROOMS, COGS } from './config.js';
-import { hasRole } from './utils.js';
+import { hasRole, isBotAdmin, NO_PERM } from './utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -76,11 +76,11 @@ function unloadCog(name) {
 }
 
 // ==========================================
-// BỘ LỆNH QUẢN TRỊ MODULE (Dành cho Hội Đồng Ủy Ban)
+// BỘ LỆNH QUẢN TRỊ MODULE (Dành cho role PD bot admin)
 // ==========================================
 const adminCommands = {
   async load(ctx, name) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
     try {
       await loadCog(name);
       await ctx.send(`✅ **ĐIỀU ĐỘNG THÀNH CÔNG:** Phòng ban \`cogs.${name}\` đã hoạt động!`);
@@ -89,7 +89,7 @@ const adminCommands = {
     }
   },
   async unload(ctx, name) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
     try {
       unloadCog(name);
       await ctx.send(`🛑 **ĐÌNH CHỈ THÀNH CÔNG:** Phòng ban \`cogs.${name}\` đã bị tạm dừng!`);
@@ -98,7 +98,7 @@ const adminCommands = {
     }
   },
   async reload(ctx, name) {
-    if (!hasRole(ctx.author, 'Hội Đồng Ủy Ban')) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
     try {
       unloadCog(name);
       await loadCog(name);

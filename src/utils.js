@@ -1,4 +1,5 @@
 import { SnowflakeUtil } from 'discord.js';
+import { BOT_ADMIN_ROLE } from './config.js';
 
 // ==========================================
 // CHUỖI / SỐ
@@ -119,13 +120,9 @@ export const roleByName = (guild, name) => guild?.roles.cache.find((r) => r.name
 export const roleMention = (guild, name) => roleByName(guild, name)?.toString() ?? `@${name}`;
 export const callsignOf = (displayName) => String(displayName ?? '').split('|')[0].trim();
 
-// Hội Đồng Ủy Ban, hoặc Sở Trưởng có số 203 / 269 / 200 trong tên
-export function isTopBoss(member) {
-  if (hasRole(member, 'Hội Đồng Ủy Ban')) return true;
-  if (!hasRole(member, 'Sở Trưởng Cảnh Sát')) return false;
-  const n = member.displayName ?? '';
-  return ['203', '269', '200'].some((x) => n.includes(x));
-}
+// Quyền quản lý bot: chỉ role BOT_ADMIN_ROLE ("PD bot admin")
+export const isBotAdmin = (member) => hasRole(member, BOT_ADMIN_ROLE);
+export const NO_PERM = `❌ Chỉ role **${BOT_ADMIN_ROLE}** được dùng lệnh này!`;
 
 // Tương đương utils.lay_member_theo_callsign / lay_id_theo_callsign:
 // lấy thành viên đầu tiên có display name BẮT ĐẦU bằng callsign.
