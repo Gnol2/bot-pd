@@ -11,6 +11,7 @@ export const SHEET_IDS = {
   HOME: '17khpbSoq5CvPDqJAsBD1oSbveM-O6Z_EgfxIi6Topmo', // GCPD HOME, Dispatch
   PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng
   LUONG: '1ec1PDrI9V4hlQCWf_1KRApeEpX3FVkJdTftSUClNnqU', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
+  LUAT: '1uLpKViLYlzhyBDO7lzoNydiWr77WO3WAkRBypFbVP0I', // "Tội phạm phải đọc" (tab luatpd): Nghề | Chi tiết | Link — dùng cho !luat
 };
 
 // ==========================================
@@ -78,4 +79,5 @@ export const COGS = [
   'log_nhansu',
   'dangky_ca',
   'cham_cong',
+  'luat',
 ];
