@@ -294,10 +294,8 @@ export default class CheckDam extends Cog {
   // ==========================================
   async updateChucVu(ctx) {
     const a = ctx.author;
-    if (!isBotAdmin(a)) {
-      return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
-    }
-    const msg = await ctx.send('⏳ **Đang đồng bộ chức vụ từ Sheet GCPD HOME xuống bộ nhớ JSON...**');
+    if (!isBotAdmin(a)) return ctx.send(NO_PERM);
+    const msg = await ctx.send('⏳ Đang đồng bộ chức vụ từ GCPD HOME...');
     try {
       const gcpd = await this.bot.sheets.role.getAllValues();
       const momoToRole = new Map();
@@ -316,9 +314,9 @@ export default class CheckDam extends Cog {
         }
       }
       this.saveMemory();
-      await msg.edit(`✅ **Hoàn tất!** Đã quét và cập nhật chức vụ mới cho **${updated}** Sĩ quan vào bộ nhớ.`);
+      await msg.edit(`✅ Đã cập nhật chức vụ cho **${updated}** người.`);
     } catch (e) {
-      await msg.edit(`❌ **Lỗi đồng bộ:** ${e.message}`);
+      await msg.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 
@@ -358,23 +356,23 @@ export default class CheckDam extends Cog {
     const top3 = this.renderTop(this.rankList('daily_113_mins').slice(0, 3), MEDAL_3, csMap) + '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
     const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10, csMap);
     return new EmbedBuilder()
-      .setTitle('🏆 BẢNG VÀNG ĐÀM 113')
+      .setTitle('🏆 Top đàm 113')
       .setColor(COLORS.gold)
       .addFields(
-        { name: `🔥 TOP 3 TRONG NGÀY (${fmt(nowVN(), 'DD/MM')})`, value: top3.slice(0, 1024), inline: false },
-        { name: `🌟 TOP 10 TRONG TUẦN (${this.weekRangeStr()})`, value: top10.slice(0, 1024), inline: false },
+        { name: `Top 3 hôm nay (${fmt(nowVN(), 'DD/MM')})`, value: top3.slice(0, 1024), inline: false },
+        { name: `Top 10 tuần (${this.weekRangeStr()})`, value: top10.slice(0, 1024), inline: false },
       )
-      .setFooter({ text: 'Hệ thống tự động Đàm 113 GCPD.' });
+      .setFooter({ text: 'GCPD Đàm 113' });
   }
 
   buildTongKetTuanEmbed(guild) {
     const csMap = csToMemberMap(guild);
     const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10, csMap);
     return new EmbedBuilder()
-      .setTitle(`🌟 TỔNG KẾT ĐÀM 113 CUỐI TUẦN (${this.weekRangeStr()})`)
-      .setDescription(`Vinh danh 10 Sĩ Quan có thời gian trực đàm 113 cống hiến nhiều nhất trong tuần!\n\n${top10}`)
+      .setTitle(`🏆 Tổng kết đàm 113 tuần (${this.weekRangeStr()})`)
+      .setDescription(`Top 10 thời gian trực đàm 113 trong tuần:\n\n${top10}`)
       .setColor(COLORS.gold)
-      .setFooter({ text: 'Hệ thống tự động Đàm 113 GCPD.' });
+      .setFooter({ text: 'GCPD Đàm 113' });
   }
 
   async top113(ctx) {
@@ -439,16 +437,16 @@ export default class CheckDam extends Cog {
       }
     }
 
-    const title = `📡 BẢNG THEO DÕI CÁC KÊNH ĐÀM HIỆN TẠI (Tổng: ${total} Sĩ Quan)`;
+    const title = `📡 Kênh đàm hiện tại (${total} người onduty)`;
     const lines = ['🟢 **OnDuty**\n'];
     const sortKey = (k) => (/^\d+$/.test(k.replace(/\./g, '')) ? parseFloat(k) : 999);
     for (const r of [...ondutyRads.keys()].sort((a, b) => sortKey(a) - sortKey(b))) {
-      lines.push(`**📡 ĐÀM ${r} (${ondutyRads.get(r).length} Sĩ Quan)**`);
+      lines.push(`**Đàm ${r}** (${ondutyRads.get(r).length})`);
       lines.push(...ondutyRads.get(r));
       lines.push('');
     }
     if (!ondutyRads.size) lines.push('*(Trống)*\n');
-    lines.push(`🚫 **ONDUTY KHÔNG VÀO ĐÀM (${noRadDisp.length} Sĩ Quan)**`);
+    lines.push(`🚫 **Onduty không vào đàm** (${noRadDisp.length})`);
     if (noRadDisp.length) lines.push(...noRadDisp);
     else lines.push('*(Sạch)*');
 
@@ -458,7 +456,7 @@ export default class CheckDam extends Cog {
     for (const line of lines) {
       if (chunk.length + line.length + 2 > 4000) {
         embeds.push(new EmbedBuilder().setTitle(curTitle).setColor(COLORS.blue).setDescription(chunk));
-        curTitle = title + ' (Tiếp theo)';
+        curTitle = title + ' (tiếp)';
         chunk = line + '\n';
       } else {
         chunk += line + '\n';
@@ -467,22 +465,22 @@ export default class CheckDam extends Cog {
     if (chunk) embeds.push(new EmbedBuilder().setTitle(curTitle).setColor(COLORS.blue).setDescription(chunk));
 
     let content = '';
-    if (isAuto) content += `🕒 **Hệ thống tự kiểm tra Kênh đàm lúc ${fmt(nowVN(), 'HH:mm')}**\n`;
-    if (pings.length) content += `⚠ **Yêu cầu Sĩ quan ${pings.join(', ')} vào đàm để làm nhiệm vụ.**`;
-    else if (!isAuto) content = '✅ **Hoàn tất quét! Mọi người đều đang trong đàm.**';
+    if (isAuto) content += `ℹ️ Kiểm tra kênh đàm lúc **${fmt(nowVN(), 'HH:mm')}**\n`;
+    if (pings.length) content += `⚠️ Vào đàm: ${pings.join(', ')}`;
+    else if (!isAuto) content = '✅ Mọi người đều đang trong đàm.';
 
     return { content: content.slice(0, 1950), embeds };
   }
 
   async radioCmd(ctx) {
     if (ctx.channel.id !== ROOMS.CHECK_DAM) return;
-    const msg = await ctx.send('📡 **Đang quét radar tần số...**');
+    const msg = await ctx.send('⏳ Đang kiểm tra kênh đàm...');
     try {
       const { content, embeds } = await this.buildRadioReport(ctx.guild, false);
       await msg.edit({ content: content || null, embeds: embeds.slice(0, 10) });
       for (let i = 10; i < embeds.length; i += 10) await ctx.send({ embeds: embeds.slice(i, i + 10) });
     } catch (e) {
-      await msg.edit(`❌ **Lỗi:** \`${e.message}\``);
+      await msg.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 
@@ -518,7 +516,7 @@ export default class CheckDam extends Cog {
   // ==========================================
   async adjust113(ctx, identifier, minutesStr, mode) {
     // FIX: bản Python ở sub113 gõ nhầm tên role "S Sở Trưởng Cảnh Sát"
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     if (!identifier || !/^-?\d+$/.test(minutesStr ?? '')) {
       return ctx.send(`⚠️ Cú pháp: \`!${mode}113 <callsign|momo> <số phút>\``);
     }
@@ -536,7 +534,7 @@ export default class CheckDam extends Cog {
     }
 
     if (!targetCs) {
-      const wait = await ctx.send(`⏳ Chưa có dữ liệu cho \`${identifier}\`. Đợi ${mode === 'add' ? 'tí' : 'chút'} nha...`);
+      const wait = await ctx.send(`⏳ Đang tìm **${identifier}** trên Sheet...`);
       const allRows = await this.fetchSheetData();
       for (let idx = 1; idx < allRows.length; idx++) {
         const row = allRows[idx];
@@ -551,11 +549,7 @@ export default class CheckDam extends Cog {
         }
       }
       if (!targetCs) {
-        return wait.edit(
-          mode === 'add'
-            ? `❌ **Lỗi:** Không tìm thấy Sĩ quan có số momo \`${identifier}\`!`
-            : `❌ **Lỗi:** Không tìm thấy Sĩ quan \`${identifier}\`.`,
-        );
+        return wait.edit(`❌ Không tìm thấy callsign/momo **${identifier}**.`);
       }
       await wait.delete().catch(() => {});
     }
@@ -564,13 +558,13 @@ export default class CheckDam extends Cog {
     if (mode === 'add') {
       mem.weekly_113_mins += minutes;
       this.saveMemory();
-      await ctx.send(`✅ Đã ** THÊM ${minutes} phút** trực đàm 113 vào Lịch sử Tuần cho Sĩ quan **${targetCs} | Momo: ${mem.momo}**!`);
+      await ctx.send(`✅ Đã cộng **${minutes}** phút đàm 113 (tuần) cho **${targetCs} | ${mem.momo}**.`);
     } else {
       const newMins = Math.max(0, (mem.weekly_113_mins ?? 0) - minutes);
       mem.weekly_113_mins = newMins;
       this.saveMemory();
       await ctx.send(
-        `✅ Đã **TRỪ KHẤU HAO ${minutes} phút** trực đàm 113 khỏi Lịch sử Tuần cho Sĩ quan **${targetCs} | Momo: ${mem.momo}**. (Tổng số phút hiện tại: ${newMins}p)`,
+        `✅ Đã trừ **${minutes}** phút đàm 113 (tuần) của **${targetCs} | ${mem.momo}**. Còn: **${newMins}p**.`,
       );
     }
   }
@@ -608,15 +602,15 @@ export default class CheckDam extends Cog {
           let desc = '';
           top10.forEach((u, i) => {
             const det = Object.entries(u.details).map(([rad, m]) => `${rad} (${this.formatTime(m)})`);
-            desc += `**#${i + 1}. ${u.cs} | ${u.momo} | ${u.name}** - Tổng vi phạm: \`${this.formatTime(u.mins)}\`\n└> Chi tiết: ${det.join(', ')}\n\n`;
+            desc += `**#${i + 1}. ${u.cs} | ${u.momo} | ${u.name}** - Tổng: \`${this.formatTime(u.mins)}\`\n└> Chi tiết: ${det.join(', ')}\n\n`;
           });
           const embed = new EmbedBuilder()
-            .setTitle(`🚨 DANH SÁCH VI PHẠM ĐÀM HÔM NAY (${fmt(now, 'DD/MM/YYYY')})`)
+            .setTitle(`🚨 Vi phạm đàm ${fmt(now, 'DD/MM/YYYY')}`)
             .setDescription(
-              `Top 10 Sĩ Quan OnDuty nhưng không ở các đàm chính (1-9, 113).\n*(Bao gồm cả lỗi không vào đàm)*\n\n${desc}`.slice(0, 4096),
+              `Top 10 onduty ngoài đàm chính (1-9, 113), tính cả không vào đàm.\n\n${desc}`.slice(0, 4096),
             )
             .setColor(COLORS.red)
-            .setFooter({ text: 'Báo cáo được trích xuất tự động từ Hệ thống Radar giám sát.' });
+            .setFooter({ text: 'GCPD Check đàm' });
           await chVp.send({ content: pings, embeds: [embed] });
         }
       }
@@ -689,12 +683,12 @@ export default class CheckDam extends Cog {
         this.empty113Minutes++;
         if (this.empty113Minutes >= 5) {
           let pingsStr, note;
-          if (team113.length) [pingsStr, note] = [team113.join(' '), '*(Sĩ quan 113 đang OnDuty)*'];
-          else if (allOnduty.length) [pingsStr, note] = [allOnduty.join(' '), '*(Lực lượng 113 đang vắng mặt. Các Sĩ quan OnDuty vào hỗ trợ!)*'];
-          else [pingsStr, note] = ['', '*(Hiện tại toàn Sở đang OffDuty...)*'];
+          if (team113.length) [pingsStr, note] = [team113.join(' '), '*(Team 113 đang onduty)*'];
+          else if (allOnduty.length) [pingsStr, note] = [allOnduty.join(' '), '*(Không có team 113, người onduty vào hỗ trợ)*'];
+          else [pingsStr, note] = ['', '*(Không ai onduty)*'];
 
-          let msg = `🚨 **BÁO ĐỘNG KHẨN CẤP ĐÀM 113** 🚨\nPhát hiện 5 phút vừa qua không có ai trực đàm hỗ trợ!\n👉 ${pingsStr}\n${note}\n`;
-          if (pingsNoRadio.length) msg += `\n⚠️ **Sĩ quan đang OnDuty nhưng trốn đàm:** ${pingsNoRadio.join(', ')}`;
+          let msg = `🚨 **ĐÀM 113 TRỐNG**\nKhông ai trực đàm 113 trong 5 phút qua.\nGọi: ${pingsStr}\n${note}\n`;
+          if (pingsNoRadio.length) msg += `\nOnduty chưa vào đàm: ${pingsNoRadio.join(', ')}`;
           await sendTemp(channel, msg.length > 2000 ? msg.slice(0, 1990) + '...*' : msg, 300_000);
           this.empty113Minutes = 0;
         }
@@ -709,7 +703,7 @@ export default class CheckDam extends Cog {
           if (this.overload.minutes >= 30) {
             if (topChannel) {
               await topChannel.send(
-                `🚨 **CẢNH BÁO ĐÀM 113 QUÁ TẢI (TRÊN 30 PHÚT)** 🚨\nPhát hiện đúng nhóm **${count113} sĩ quan** gồm ${in113Pings.join(', ')} cắm chốt liên tục trong đàm 113.\n⚠️ **Yêu cầu tuân thủ quy định về đàm 113. Đàm 113 đang có quá nhiều người ngồi cùng lúc!**`,
+                `🚨 **ĐÀM 113 QUÁ TẢI**\nCùng **${count113}** người ở đàm 113 liên tục hơn 30 phút: ${in113Pings.join(', ')}\nVui lòng tuân thủ quy định số người trong đàm 113.`,
               );
             }
             this.overload.minutes = 0;

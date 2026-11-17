@@ -64,7 +64,7 @@ export default class LogHoaDon113 extends Cog {
     } else if (parts.length === 3) {
       [startStr, endStr] = [parts[1], parts[2]];
     } else {
-      return ctx.reply('⚠️ Cú pháp: `!quetdulieu DD/MM/YYYY-DD/MM/YYYY`');
+      return ctx.reply('⚠️ Cú pháp: `!quetdulieu [momo] <DD/MM/YYYY-DD/MM/YYYY>`\nVí dụ: `!quetdulieu 01/11/2026-07/11/2026`');
     }
 
     try {
@@ -74,7 +74,7 @@ export default class LogHoaDon113 extends Cog {
       if (!startDate || !endDay) throw new Error(`không đọc được "${startStr}" / "${endStr}"`);
       const endDate = addMs(endDay, DAY_MS);
 
-      await ctx.reply(`⏳ Đang quét dữ liệu lịch sử từ \`${startStr}\` đến \`${endStr}\`...`);
+      await ctx.reply(`⏳ Đang quét lịch sử **${startStr}** → **${endStr}**...`);
       const sheetHoadon = [];
       const sheet113 = [];
 
@@ -90,9 +90,9 @@ export default class LogHoaDon113 extends Cog {
       if (sheet113.length) await this.bot.sheets.data.appendRows(sheet113);
       if (sheetHoadon.length) await this.bot.sheets.hoadon.appendRows(sheetHoadon);
 
-      await ctx.reply(`✅ Đã quét xong! Ghi **${sheet113.length}** dòng vào \`Hoa-Don-113\` và **${sheetHoadon.length}** dòng vào \`Hoa-Don\`.`);
+      await ctx.reply(`✅ Quét xong: **${sheet113.length}** dòng vào \`Hoa-Don-113\`, **${sheetHoadon.length}** dòng vào \`Hoa-Don\`.`);
     } catch (e) {
-      await ctx.reply(`❌ Lỗi định dạng ngày tháng: ${e.message}`);
+      await ctx.reply(`❌ Lỗi: ${e.message}`);
     }
   }
 
@@ -112,7 +112,7 @@ export default class LogHoaDon113 extends Cog {
         break;
       }
     }
-    if (!momoId) return ctx.reply(`❌ Sĩ quan **${authorName}** không có trong danh sách Đội 113.`);
+    if (!momoId) return ctx.reply(`❌ **${authorName}** không có trong danh sách Đội 113.`);
 
     const parts = ctx.message.content.trim().split(/\s+/);
     const year = nowVN().getUTCFullYear();
@@ -125,15 +125,15 @@ export default class LogHoaDon113 extends Cog {
       const [s, e] = parts[1].split('-');
       const sd = parseDMY(`${s}/${year}`);
       const ed = parseDMY(`${e}/${year}`);
-      if (!sd || !ed) return ctx.reply('❌ Sai định dạng ngày! Vui lòng nhập `DD/MM-DD/MM`');
+      if (!sd || !ed) return ctx.reply('❌ Ngày không hợp lệ. Dùng `DD/MM-DD/MM`.');
       startDate = sd;
       endFull = addMs(ed, DAY_MS - 1000);
     } else {
-      return ctx.reply('⚠️ Cú pháp: `!hoadon` hoặc `!hoadon DD/MM-DD/MM`');
+      return ctx.reply('⚠️ Cú pháp: `!hoadon [DD/MM-DD/MM]`');
     }
 
     try {
-      await ctx.reply(`⏳ Đang xử lý hồ sơ cho sĩ quan \`${tenSiQuan}\` (Chỉ tính HĐ > $1,500)...`);
+      await ctx.reply(`⏳ Đang tính hóa đơn của **${tenSiQuan}** (chỉ tính HĐ > $1,500)...`);
       const allRows = await this.bot.sheets.data.getAllValues();
       let count = 0;
       let total = 0;
@@ -152,17 +152,17 @@ export default class LogHoaDon113 extends Cog {
       }
 
       const tienGoc = total > 0 ? Math.trunc(total / 1.05) : 0;
-      const bonus = count >= 15 ? `$${money(Math.round(tienGoc * 0.15))}` : 'Không có thưởng (chưa đạt 15 hđ > $1,500)';
+      const bonus = count >= 15 ? `**$${money(Math.round(tienGoc * 0.15))}**` : 'Không (chưa đủ 15 HĐ > $1,500)';
 
       await ctx.reply(
-        `**Sĩ quan:** ${tenSiQuan} | **ID PD :** ${momoId}\n` +
-          `**Thời gian:** ${fmt(startDate, 'DD/MM')} → ${fmt(endFull, 'DD/MM')}\n` +
-          `**Số hóa đơn hợp lệ (> $1,500) :** ${count}\n` +
-          `**Tổng tiền hóa đơn :** $${money(tienGoc)}\n` +
-          `**Thưởng thêm (15%):** ${bonus}`,
+        `ℹ️ Hóa đơn 113: **${tenSiQuan}** | ID: **${momoId}**\n` +
+          `Thời gian: **${fmt(startDate, 'DD/MM')} → ${fmt(endFull, 'DD/MM')}**\n` +
+          `HĐ hợp lệ (> $1,500): **${count}**\n` +
+          `Tổng tiền: **$${money(tienGoc)}**\n` +
+          `Thưởng (15%): ${bonus}`,
       );
     } catch (e) {
-      await ctx.reply(`❌ Lỗi kết nối Sheet: ${e.message}`);
+      await ctx.reply(`❌ Lỗi: ${e.message}`);
     }
   }
 }

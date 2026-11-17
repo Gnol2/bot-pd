@@ -100,9 +100,9 @@ export default class DangKyCa extends Cog {
 
     if (absent.length) {
       const text =
-        `⏰ **NHẮC CA TRỰC** — **Ca ${ca}** \`${caLabel(ca)}\` đã bắt đầu ${minIntoCa} phút nhưng các sĩ quan sau **chưa ONDUTY**:\n` +
+        `⚠️ **Ca ${ca}** \`${caLabel(ca)}\` đã bắt đầu **${minIntoCa}** phút, chưa onduty:\n` +
         absent.map((r) => `• ${r.uid ? `<@${r.uid}>` : ''} **${r.cs} | ${r.name}**`).join('\n') +
-        `\nVui lòng vào ca, hoặc báo quản lý nếu không thể trực.`;
+        `\nVào ca hoặc báo quản lý nếu không trực được.`;
       const ch = ROOMS.DANG_KY_CA ? this.bot.channels.cache.get(ROOMS.DANG_KY_CA) : null;
       if (ch) {
         await ch.send({ content: text, allowedMentions: { users: absent.map((r) => r.uid).filter(Boolean) } });
@@ -112,8 +112,8 @@ export default class DangKyCa extends Cog {
           if (!r.uid) continue;
           const user = await this.bot.users.fetch(r.uid).catch(() => null);
           const dm =
-            `⏰ **NHẮC CA TRỰC** — **Ca ${ca}** \`${caLabel(ca)}\` ngày ${key} đã bắt đầu ${minIntoCa} phút nhưng bạn **chưa ONDUTY**.\n` +
-            'Vui lòng vào ca, hoặc báo quản lý nếu không thể trực.';
+            `⚠️ **Ca ${ca}** \`${caLabel(ca)}\` ngày **${key}** đã bắt đầu **${minIntoCa}** phút, bạn chưa onduty.\n` +
+            'Vào ca hoặc báo quản lý nếu không trực được.';
           await user?.send(dm).catch((e) => console.error(`❌ [NhacCa] Không DM được ${r.cs}:`, e.message));
         }
       }
@@ -218,11 +218,11 @@ export default class DangKyCa extends Cog {
     const p = this.parseArgs(args, MAX_CA_PER_DAY);
     if (p.error) return ctx.reply(p.error);
     if (!p.cas.length) {
-      return ctx.reply(`⚠️ Cú pháp: \`!dangky <ca> [ca thứ 2] [ngày]\`\nVí dụ: \`!dangky 8\`, \`!dangky 14-16 20-22 mai\`, \`!dangky 3 18/11\`\nGõ \`!lichtruc\` để xem ca còn trống.`);
+      return ctx.reply(`⚠️ Cú pháp: \`!dangky <ca> [ca 2] [ngày]\`\nVí dụ: \`!dangky 8\`, \`!dangky 14-16 20-22 mai\`, \`!dangky 3 18/11\` (xem ca trống: \`!lichtruc\`)`);
     }
 
     const me = await this.findOfficer(ctx.author);
-    if (!me) return ctx.reply(`❌ Callsign **${callsignOf(ctx.author.displayName)}** không có trong danh sách PD (tab Online). Liên hệ quản lý để được thêm.`);
+    if (!me) return ctx.reply(`❌ Không tìm thấy callsign **${callsignOf(ctx.author.displayName)}** trong danh sách PD (tab Online). Liên hệ quản lý.`);
 
     return this.withLock(async () => {
       const ws = await this.dataSheet();
@@ -242,7 +242,7 @@ export default class DangKyCa extends Cog {
       if (mine.length + ok.length > MAX_CA_PER_DAY) {
         const left = MAX_CA_PER_DAY - mine.length;
         return ctx.reply(
-          `❌ Mỗi PD tối đa **${MAX_CA_PER_DAY} ca/ngày**. Ngày ${key} bạn đã có: ${mine.map((r) => `Ca ${r.ca}`).join(', ') || 'chưa có'} → chỉ còn đăng ký thêm được **${Math.max(0, left)}** ca.`,
+          `❌ Tối đa **${MAX_CA_PER_DAY}** ca/ngày. Ngày **${key}** bạn đã có: ${mine.map((r) => `Ca ${r.ca}`).join(', ') || 'chưa có'} → còn đăng ký được **${Math.max(0, left)}** ca.`,
         );
       }
       if (!ok.length) return ctx.reply(`❌ Không đăng ký được:\n• ${errors.join('\n• ')}`);
@@ -254,8 +254,8 @@ export default class DangKyCa extends Cog {
       );
       await this.renderView().catch((e) => console.error('❌ [DangKyCa] Lỗi vẽ Lich-Truc:', e.message));
 
-      let msg = `✅ **${me.cs} | ${me.name}** đã đăng ký ngày **${key}**: ${ok.map((ca) => `**Ca ${ca}** (${caLabel(ca)})`).join(', ')}.`;
-      if (errors.length) msg += `\n⚠️ Không đăng ký được:\n• ${errors.join('\n• ')}`;
+      let msg = `✅ Đã đăng ký cho **${me.cs} | ${me.name}** ngày **${key}**: ${ok.map((ca) => `**Ca ${ca}** (${caLabel(ca)})`).join(', ')}.`;
+      if (errors.length) msg += `\nKhông đăng ký được:\n• ${errors.join('\n• ')}`;
       return ctx.reply(msg);
     });
   }
@@ -265,7 +265,7 @@ export default class DangKyCa extends Cog {
     if (!this.inRoom(ctx)) return;
     const p = this.parseArgs(args, MAX_CA_PER_DAY);
     if (p.error) return ctx.reply(p.error);
-    if (!p.cas.length) return ctx.reply('⚠️ Cú pháp: `!huyca <ca> [ngày]` — ví dụ `!huyca 8`, `!huyca 14-16 mai`');
+    if (!p.cas.length) return ctx.reply('⚠️ Cú pháp: `!huyca <ca> [ngày]`\nVí dụ: `!huyca 8`, `!huyca 14-16 mai`');
 
     const me = await this.findOfficer(ctx.author);
     if (!me) return ctx.reply('❌ Bạn không có trong danh sách PD (tab Online).');
@@ -292,7 +292,7 @@ export default class DangKyCa extends Cog {
         await this.renderView().catch((e) => console.error('❌ [DangKyCa] Lỗi vẽ Lich-Truc:', e.message));
       }
       let msg = done.length ? `✅ Đã hủy ${done.map((c) => `**Ca ${c}**`).join(', ')} ngày **${key}**.` : '';
-      if (errors.length) msg += `${msg ? '\n' : ''}❌ ${errors.join('\n❌ ')}`;
+      if (errors.length) msg += msg ? `\nKhông hủy được:\n• ${errors.join('\n• ')}` : `❌ Không hủy được:\n• ${errors.join('\n• ')}`;
       return ctx.reply(msg);
     });
   }
@@ -304,13 +304,13 @@ export default class DangKyCa extends Cog {
     const [who, ...rest] = args.filter(Boolean);
     const p = this.parseArgs(rest, NUM_CA);
     if (!who || p.error || !p.cas.length) {
-      return ctx.reply(p.error ?? '⚠️ Cú pháp: `!xoaca <callsign|momo> <ca> [ngày]` — ví dụ `!xoaca 609 8 mai`');
+      return ctx.reply(p.error ?? '⚠️ Cú pháp: `!xoaca <callsign|momo> <ca> [ngày]`\nVí dụ: `!xoaca 609 8 mai`');
     }
     return this.withLock(async () => {
       const ws = await this.dataSheet();
       const key = dayKey(p.day);
       const hits = (await this.activeRows(ws)).filter((r) => r.day === key && p.cas.includes(r.ca) && (r.cs === who || r.momo === who));
-      if (!hits.length) return ctx.reply(`📭 Không thấy \`${who}\` đăng ký ${p.cas.map((c) => `Ca ${c}`).join(', ')} ngày ${key}.`);
+      if (!hits.length) return ctx.reply(`📭 **${who}** không đăng ký ${p.cas.map((c) => `Ca ${c}`).join(', ')} ngày **${key}**.`);
       const note = `Xóa bởi ${callsignOf(ctx.author.displayName)} ${fmt(nowVN(), 'DD/MM HH:mm')}`;
       await ws.updateCells(hits.flatMap((r) => [{ row: r.row, col: 8, value: CANCELLED }, { row: r.row, col: 10, value: note }]), 'RAW');
       await this.renderView().catch((e) => console.error('❌ [DangKyCa] Lỗi vẽ Lich-Truc:', e.message));
@@ -323,7 +323,7 @@ export default class DangKyCa extends Cog {
     if (!this.inRoom(ctx)) return;
     const today = startOfDay(nowVN());
     const day = dayArg ? parseDay(dayArg, today) : today;
-    if (!day) return ctx.reply('❌ Ngày không hợp lệ. Ví dụ: `!lichtruc`, `!lichtruc mai`, `!lichtruc 18/11`');
+    if (!day) return ctx.reply('❌ Ngày không hợp lệ. Ví dụ: `!lichtruc mai`, `!lichtruc 18/11`');
 
     const ws = await this.dataSheet();
     const key = dayKey(day);
@@ -339,7 +339,7 @@ export default class DangKyCa extends Cog {
       lines.push(`${icon} **Ca ${ca}** \`${caLabel(ca)}\` — ${names || '_trống_'}${!ended && free > 0 && ppl.length ? ` _(còn ${free})_` : ''}`);
     }
     const embed = new EmbedBuilder()
-      .setTitle(`🗓️ LỊCH CA TRỰC — ${dayShort(day)}/${day.getUTCFullYear()}`)
+      .setTitle(`🗓️ Lịch ca trực ${dayShort(day)}/${day.getUTCFullYear()}`)
       .setColor(COLORS.blue)
       .setDescription(`${lines.join('\n')}\n\n🟢 trống · 🟡 còn chỗ · 🔴 đủ người · ⚫ đã qua\nĐăng ký: \`!dangky <ca> [ca 2] [ngày]\` · Hủy: \`!huyca <ca> [ngày]\``)
       .setFooter({ text: `Tối đa ${MAX_CA_PER_DAY} ca/người/ngày · ${MAX_PER_CA} người/ca` });
@@ -352,7 +352,7 @@ export default class DangKyCa extends Cog {
     const caList = Array.from({ length: NUM_CA }, (_, i) => `\`${p2(i + 1)}\` ${caLabel(i + 1)}`);
     const half = NUM_CA / 2;
     const embed = new EmbedBuilder()
-      .setTitle('📖 HƯỚNG DẪN ĐĂNG KÝ CA TRỰC')
+      .setTitle('📖 Hướng dẫn đăng ký ca trực')
       .setColor(COLORS.blue)
       .setDescription(
         `Mỗi ngày có **${NUM_CA} ca**, mỗi ca **${CA_HOURS} tiếng** (giờ VN). ` +
@@ -384,7 +384,7 @@ export default class DangKyCa extends Cog {
           value: [
             '• Ca nhập bằng **số ca** (`1`–`12`) hoặc **khung giờ chẵn** (`14-16`).',
             '• Ngày: bỏ trống = hôm nay, `mai`, `dd/mm` hoặc `dd/mm/yyyy`.',
-            `• Ca bắt đầu ${REMIND_AFTER_MIN} phút mà chưa **ONDUTY** sẽ bị bot nhắc và ghi nhận vào sheet.`,
+            `• Ca bắt đầu ${REMIND_AFTER_MIN} phút mà chưa onduty sẽ bị bot nhắc và ghi vào sheet.`,
             '• Lịch tổng xem trong Google Sheet, tab **Lich-Truc**.',
           ].join('\n'),
         },
@@ -408,7 +408,7 @@ export default class DangKyCa extends Cog {
         return cas.length ? `• **${dayShort(d)}**: ${cas.map((r) => `Ca ${r.ca} \`${caLabel(r.ca)}\``).join(', ')}` : null;
       })
       .filter(Boolean);
-    return ctx.reply(lines.length ? `🗓️ Ca trực của **${me.cs} | ${me.name}** (7 ngày tới):\n${lines.join('\n')}` : '📭 Bạn chưa đăng ký ca nào trong 7 ngày tới.');
+    return ctx.reply(lines.length ? `ℹ️ Ca trực của **${me.cs} | ${me.name}** (7 ngày tới):\n${lines.join('\n')}` : '📭 Bạn chưa đăng ký ca nào trong 7 ngày tới.');
   }
 
   // ---------- Vẽ tab Lich-Truc: 12 ca x 7 ngày, mỗi ca 2 dòng (2 chỗ) ----------

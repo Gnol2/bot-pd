@@ -71,17 +71,15 @@ export default class LogHandcuff extends Cog {
 
         const infoY = targetRow
           ? `Cảnh sát **${targetRow[1]} | ${targetId} | ${targetRow[3]}**`
-          : `người dân **${targetName}** (ID: **${targetId}**)`;
-
-        const footer = '\n*Hệ thống ghi nhận, cần chú ý theo dõi thêm.*';
+          : `Người dân **${targetName} | ${targetId}**`;
 
         if (!copRow) {
           const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_NGOAI'));
           if (alert) {
             await alert.send(
-              `📝 **THÔNG BÁO GIÁM SÁT**\n` +
-                `Ghi nhận đối tượng **${copName}** (ID: **${copId}**) không có trong danh sách Cảnh sát ` +
-                `nhưng đã sử dụng còng tay đối với ${infoY}.${footer}`,
+              `🚨 **NGƯỜI NGOÀI PD DÙNG CÒNG TAY**\n` +
+                `Người còng: **${copName} | ${copId}** (không có trong danh sách PD)\n` +
+                `Bị còng: ${infoY}`,
             );
           }
           continue;
@@ -92,9 +90,9 @@ export default class LogHandcuff extends Cog {
           const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_OFFDUTY'));
           if (alert) {
             await alert.send(
-              `📝 **THÔNG BÁO GIÁM SÁT**\n` +
-                `Ghi nhận Sĩ quan **${copRow[1]} | ${copId} | ${copRow[3]}** đang **OFF DUTY** ` +
-                `nhưng đã sử dụng còng tay đối với ${infoY}.${footer}`,
+              `🚨 **CÒNG TAY KHI OFF DUTY**\n` +
+                `Cảnh sát: **${copRow[1]} | ${copId} | ${copRow[3]}** (OFF DUTY)\n` +
+                `Bị còng: ${infoY}`,
             );
           }
         }
@@ -106,23 +104,21 @@ export default class LogHandcuff extends Cog {
 
   // !congtay <ID> dd/mm-dd/mm
   async congtay(ctx, copId, dateRange) {
-    if (!isBotAdmin(ctx.author)) {
-      return ctx.send(NO_PERM);
-    }
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     if (!copId || !dateRange || !dateRange.includes('-')) {
-      return ctx.send('⚠️ **Cú pháp sai!** Vui lòng gõ theo mẫu: `!congtay <ID> ngày/tháng-ngày/tháng`');
+      return ctx.send('⚠️ Cú pháp: `!congtay <ID> <DD/MM-DD/MM>`\nVí dụ: `!congtay 12345 01/11-07/11`');
     }
 
     const [startStr, endStr] = dateRange.split('-');
     const year = new Date().getFullYear();
     const startDt = parseDMY(`${startStr}/${year}`);
     const endDay = parseDMY(`${endStr}/${year}`);
-    if (!startDt || !endDay) return ctx.send('❌ Định dạng ngày tháng không hợp lệ!');
+    if (!startDt || !endDay) return ctx.send('❌ Ngày không hợp lệ. Dùng `DD/MM-DD/MM`.');
     const endDt = addMs(endDay, (23 * 3600 + 59 * 60 + 59) * 1000);
 
-    const loading = await ctx.send(`⏳ **RADAR KHỞI ĐỘNG:** Đang lục soát ID **${copId}** từ ${startStr} đến ${endStr}...`);
+    const loading = await ctx.send(`⏳ Đang quét còng tay của ID **${copId}** (**${startStr}** → **${endStr}**)...`);
     const channel = this.bot.channels.cache.get(ROOMS.HANDCUFF);
-    if (!channel) return loading.edit('❌ Không tìm thấy kênh Log Còng tay!');
+    if (!channel) return loading.edit('❌ Không tìm thấy kênh log còng tay.');
 
     const records = [];
     let count = 0;
@@ -140,20 +136,20 @@ export default class LogHandcuff extends Cog {
         }
         if (count % 5000 === 0) {
           await loading
-            .edit(`🔄 Đã kiểm tra **${count.toLocaleString('en-US')}** tin nhắn. Tìm thấy **${records.length}** kết quả...`)
+            .edit(`⏳ Đang quét... **${count.toLocaleString('en-US')}** tin nhắn, **${records.length}** kết quả`)
             .catch(() => {});
         }
       }
 
       if (!records.length) {
-        return loading.edit(`📭 Hồ sơ sạch sẽ, không tìm thấy đối tượng ID **${copId}** còng tay ai.`);
+        return loading.edit(`📭 Không có lần còng tay nào của ID **${copId}**.`);
       }
 
       const ws = await this.bot.gs.worksheet(SHEET_IDS.MAIN, 'Cong-Tay');
       await ws.appendRows(records);
-      await loading.edit(`✅ **HOÀN TẤT!** Đã ghi chú **${records.length}** lần còng tay lên Sheet \`Cong-Tay\`.`);
+      await loading.edit(`✅ Đã ghi **${records.length}** dòng vào \`Cong-Tay\`.`);
     } catch (e) {
-      await loading.edit(`❌ Có lỗi xảy ra trong quá trình quét: ${e.message}`);
+      await loading.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 }

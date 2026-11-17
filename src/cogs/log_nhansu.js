@@ -113,7 +113,7 @@ export default class LogNhanSu extends Cog {
       const t = newOfficers.get(pid)?.time;
       const timeStr = fmt(t ? toVN(t) : nowVN(), 'HH:mm:ss DD/MM/YYYY');
       await vp.send(
-        `🚨 ${pings}\nPhát hiện số momo là **${pid}** không có trong Danh sách Cảnh sát hiện tại vừa OnDuty vào lúc **${timeStr}**. Cần xác minh thông tin thực tế.`,
+        `🚨 **MOMO LẠ ON DUTY** ${pings}\nMomo: **${pid}** (không có trong danh sách cảnh sát)\nThời gian: **${timeStr}**`,
       );
     }
   }
@@ -258,17 +258,17 @@ export default class LogNhanSu extends Cog {
   async parseRange(ctx, fromStr, toStr, label, cmd) {
     const now = nowVN();
     if (!fromStr) {
-      await ctx.send(`⏳ **Radar quét bù ${label} 24h qua đang chạy...**\n*(Mẹo: Sếp có thể quét theo ngày: \`!${cmd} 01/10/2026 15/10/2026\`)*`);
+      await ctx.send(`⏳ Đang quét bù ${label} 24h qua...\nℹ️ Quét theo ngày: \`!${cmd} 01/10/2026 15/10/2026\``);
       return { from: addMs(now, -24 * HOUR_MS), to: now };
     }
     const from = parseDMY(fromStr);
     const toDay = toStr ? parseDMY(toStr) : now;
     if (!from || !toDay) {
-      await ctx.send(`❌ **Sai định dạng!** Vui lòng nhập chuẩn: \`dd/mm/yyyy\` (Ví dụ: \`!${cmd} 01/10/2026 15/10/2026\`).`);
+      await ctx.send(`⚠️ Cú pháp: \`!${cmd} [dd/mm/yyyy] [dd/mm/yyyy]\`\nVí dụ: \`!${cmd} 01/10/2026 15/10/2026\``);
       return null;
     }
     const to = endOfDay(toDay);
-    await ctx.send(`⏳ **Radar khởi động chiến dịch Backfill ${label}...**\n*(Mốc: Từ ${fmt(from, 'DD/MM/YYYY')} đến ${fmt(to, 'DD/MM/YYYY')})*`);
+    await ctx.send(`⏳ Đang quét bù ${label} từ **${fmt(from, 'DD/MM/YYYY')}** đến **${fmt(to, 'DD/MM/YYYY')}**...`);
     return { from, to };
   }
 
@@ -276,13 +276,13 @@ export default class LogNhanSu extends Cog {
   // !updateduty [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateDuty(ctx, fromStr, toStr) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     const range = await this.parseRange(ctx, fromStr, toStr, 'Duty', 'updateduty');
     if (!range) return;
 
     try {
       const channel = this.bot.channels.cache.get(ROOMS.DUTY);
-      if (!channel) return ctx.send('❌ Không tìm thấy kênh Log Duty!');
+      if (!channel) return ctx.send('❌ Không tìm thấy kênh log Duty.');
 
       const finalStates = new Map();
       for await (const msg of history(channel, { limit: null, after: vnToUtc(range.from), before: vnToUtc(range.to), oldestFirst: true })) {
@@ -291,7 +291,7 @@ export default class LogNhanSu extends Cog {
           if (d) finalStates.set(d.pid, d.status);
         }
       }
-      if (!finalStates.size) return ctx.send('📭 Không có dữ liệu chấm công trong khoảng thời gian này.');
+      if (!finalStates.size) return ctx.send('📭 Không có log Duty trong khoảng này.');
 
       const allRows = await this.bot.sheets.online.getAllValues();
       const cells = [];
@@ -312,7 +312,7 @@ export default class LogNhanSu extends Cog {
       });
 
       if (cells.length) await this.bot.sheets.online.updateCells(cells);
-      await ctx.send(`✅ Đã đồng bộ xong dữ liệu Duty cho **${finalStates.size}** Sĩ quan (Chỉ GHI ĐÈ những người có sẵn trên Sheet).`);
+      await ctx.send(`✅ Đã cập nhật Duty: **${finalStates.size}** người (chỉ người có trong \`Online\`).`);
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }
@@ -322,13 +322,13 @@ export default class LogNhanSu extends Cog {
   // !updateradio [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateRadio(ctx, fromStr, toStr) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     const range = await this.parseRange(ctx, fromStr, toStr, 'Radio', 'updateradio');
     if (!range) return;
 
     try {
       const channel = this.bot.channels.cache.get(ROOMS.RADIO);
-      if (!channel) return ctx.send('❌ Không tìm thấy kênh Log Radio!');
+      if (!channel) return ctx.send('❌ Không tìm thấy kênh log Radio.');
 
       const events = [];
       for await (const msg of history(channel, { limit: null, after: vnToUtc(range.from), before: vnToUtc(range.to), oldestFirst: true })) {
@@ -337,7 +337,7 @@ export default class LogNhanSu extends Cog {
           if (r) events.push({ ...r, time: msg.createdAt });
         }
       }
-      if (!events.length) return ctx.send('📭 Không có dữ liệu Radio trong khoảng thời gian này.');
+      if (!events.length) return ctx.send('📭 Không có log Radio trong khoảng này.');
 
       events.sort((a, b) => a.time - b.time);
       const local = this.collapseRadioEvents(events);
@@ -365,7 +365,7 @@ export default class LogNhanSu extends Cog {
       });
 
       if (cells.length) await this.bot.sheets.online.updateCells(cells);
-      await ctx.send(`✅ Đã đồng bộ Radio xong cho **${local.size}** Sĩ quan (Chỉ GHI ĐÈ những người có sẵn trên Sheet).`);
+      await ctx.send(`✅ Đã cập nhật Radio: **${local.size}** người (chỉ người có trong \`Online\`).`);
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }

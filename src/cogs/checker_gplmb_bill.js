@@ -109,12 +109,11 @@ export default class CheckerGPLMBBill extends Cog {
             const target = uidNhan ? `<@${uidNhan}> (Momo: **${momoNhan}**)` : `**${tenNhan}** (Momo: **${momoNhan}**)`;
 
             await doiBay.send(
-              `🚨 **NGHI VẤN SAI PHẠM CẤP GPLMB** 🚨 ${roleMentionStr}\n` +
-                `👉 Sĩ quan cấp bằng: ${officer}\n` +
-                `👉 Cấp cho đối tượng: ${target}\n` +
-                `👉 Ngày cấp: **${ngayCap}**\n` +
-                `⚠️ **Lý do:** Hệ thống ghi nhận có cấp \`${tenGp}\` nhưng **KHÔNG TÌM THẤY** hóa đơn thu tiền ($50,000) trong khoảng thời gian 10 phút.\n` +
-                '*(Quy định: Cấp GPLMB phải ghi hóa đơn 50k liền tay)*. Yêu cầu Sĩ quan xuất trình hóa đơn!',
+              `🚨 **CẤP GPLMB THIẾU HÓA ĐƠN** ${roleMentionStr}\n` +
+                `Cảnh sát: ${officer}\n` +
+                `Đối tượng: ${target}\n` +
+                `Thời gian: **${ngayCap}**\n` +
+                `Lý do: cấp \`${tenGp}\` nhưng không có hóa đơn **$50,000** trong ±10 phút. Yêu cầu xuất trình hóa đơn.`,
             );
           }
         }

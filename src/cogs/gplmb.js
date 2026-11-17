@@ -84,11 +84,11 @@ export default class GPLMB extends Cog {
 
       let msg;
       if (data.old_officers) {
-        msg = `🚨 ${pingStr} **SĨ QUAN CHÚ Ý:** Đối tượng **${momo}** đang xài BẰNG ĐÃ TỊCH THU (Hoặc nợ tịch thu)! Yêu cầu <@${data.author}> xác nhận \`!yes\` thu bằng bù ngay lập tức!`;
+        msg = `🚨 **NHẮC TỊCH THU GPLMB**\n${pingStr}\nMomo **${momo}** đang dùng bằng đã/phải tịch thu. <@${data.author}> xác nhận \`!yes ${momo}\` sau khi thu bù.`;
       } else if (data.last_no) {
-        msg = `🚨 ${pingStr} **SĨ QUAN CHÚ Ý:** Đã qua 1 phút! **PHẢI THU GẤP GPLMB CỦA ĐỐI TƯỢNG ${momo} NGAY LẬP TỨC!**`;
+        msg = `🚨 **NHẮC TỊCH THU GPLMB**\n${pingStr}\nĐã quá 1 phút, cần thu GPLMB của Momo **${momo}** ngay.`;
       } else {
-        msg = `🚨 ${pingStr} **SĨ QUAN CHÚ Ý:** Đã qua 1 phút! Vẫn chưa thấy xác nhận \`!yes\` hoặc \`!no\` trạng thái GPLMB của Momo **${momo}**!`;
+        msg = `🚨 **NHẮC TỊCH THU GPLMB**\n${pingStr}\nĐã quá 1 phút, chưa có xác nhận \`!yes ${momo}\` / \`!no ${momo}\` cho Momo **${momo}**.`;
       }
       await channel.send(msg).catch((e) => console.error('Lỗi nhắc tịch thu:', e.message));
     }
@@ -105,9 +105,9 @@ export default class GPLMB extends Cog {
     const role = roleByName(ctx.guild, ROLE_AS);
     const mention = role ? role.toString() : `@&${ROLE_AS}`;
     if (cmd === 'vipham') {
-      await ctx.reply(`❌ Kính chào **${ctx.author.displayName}**, bạn không có quyền thao tác lệnh này.\n🚨 Yêu cầu ${mention} tiếp quản xử lý vi phạm!`);
+      await ctx.reply(`❌ Cần role **${ROLE_AS}**.\nℹ️ ${mention} vui lòng xử lý vi phạm này.`);
     } else {
-      await ctx.reply(`❌ Kính chào **${ctx.author.displayName}**, bạn không có quyền thao tác lệnh này.`);
+      await ctx.reply(`❌ Cần role **${ROLE_AS}**.`);
     }
     return false;
   }
@@ -151,7 +151,7 @@ export default class GPLMB extends Cog {
   async vipham(ctx, momo) {
     if (ctx.channel.id !== ROOMS.GPLMB_CMD) return;
     if (!(await this.checkPermissions(ctx, 'vipham'))) return;
-    if (!momo) return ctx.reply('⚠️ Sai cú pháp! Vui lòng gõ thêm số Momo.');
+    if (!momo) return ctx.reply('⚠️ Cú pháp: `!vipham <momo>`');
 
     const tsRaw = fmt(toVN(ctx.message.createdAt), 'YYYY-MM-DD HH:mm:ss');
     const logMsg = `${ctx.author.displayName} | ${tsRaw} | !vipham`;
@@ -165,12 +165,13 @@ export default class GPLMB extends Cog {
           if (revokedCount > 0) {
             const officers = this.getViphamOfficersSince5(lastRevoked, ctx.guild);
             await ctx.reply(
-              `🚨 **BÁO ĐỘNG:** GPLMB của đối tượng Momo **${momo}** ĐANG TRONG TRẠNG THÁI **ĐÃ TỊCH THU**!\n` +
-                `⚠️ Sĩ quan từng đóng dấu \`!vipham\` từ lần 5 của bằng cũ: ${officers}\n\n` +
-                `👉 Yêu cầu sĩ quan <@${ctx.author.id}> **PHẠT NGAY TỘI KHÔNG CÓ GPLMB** và **TỊCH THU NGAY LẬP TỨC** tờ GPLMB không hợp lệ đang trên người tội phạm (nếu có)!`,
+              `🚨 **GPLMB ĐÃ BỊ TỊCH THU**\n` +
+                `Momo: **${momo}**\n` +
+                `Đóng dấu từ lần 5 (bằng cũ): ${officers}\n` +
+                `<@${ctx.author.id}>: phạt tội **Không có GPLMB** và thu tờ GPLMB không hợp lệ (nếu có).`,
             );
           } else {
-            await ctx.reply(`❌ Không tìm thấy GPLMB nào đang hoạt động cho Momo **${momo}**. Đối tượng chưa từng ĐĂNG KÝ GPLMB. Yêu cầu phạt tội **Không có GPLMB**!`);
+            await ctx.reply(`❌ Momo **${momo}** chưa từng đăng ký GPLMB. Phạt tội **Không có GPLMB**.`);
           }
           return;
         }
@@ -190,9 +191,10 @@ export default class GPLMB extends Cog {
           }
 
           await ctx.reply(
-            `🚨 **BÁO ĐỘNG:** GPLMB của Momo **${momo}** ĐÃ BỊ ĐÓNG DẤU ${curV} LẦN MÀ CHƯA BỊ TỊCH THU!\n` +
-              `⚠️ Yêu cầu nhắc nhở/kỷ luật sĩ quan ${officer5} đã lơ là nhiệm vụ thu bằng (Đóng dấu lần 5 lúc: \`${time5}\`).\n\n` +
-              `👉 Yêu cầu sĩ quan <@${ctx.author.id}> **TỊCH THU BÙ NGAY LẬP TỨC** (dùng lệnh \`!yes ${momo}\` hoặc \`!no ${momo}\`) và **PHẠT NGAY TỘI KHÔNG CÓ GPLMB**!`,
+            `🚨 **GPLMB ĐỦ ${curV} LẦN CHƯA TỊCH THU**\n` +
+              `Momo: **${momo}**\n` +
+              `Đóng dấu lần 5: ${officer5} lúc \`${time5}\` (chưa thu bằng)\n` +
+              `<@${ctx.author.id}>: thu bù rồi xác nhận \`!yes ${momo}\` / \`!no ${momo}\`, phạt tội **Không có GPLMB**.`,
           );
           this.startReminder(
             momo,
@@ -207,11 +209,11 @@ export default class GPLMB extends Cog {
         await this.updateCellsAndCache([cell(activeIdx, 9, curV), cell(activeIdx, nextCol, logMsg)]);
 
         if (curV >= 5) {
-          await ctx.reply(`🚨 **CẢNH BÁO:** Đối tượng (Momo: ${momo}) vi phạm lần ${curV}. Cần tịch thu GPLMB ngay lập tức. Đã thu chưa? \`!yes ${momo}\` hoặc \`!no ${momo}\`.`);
+          await ctx.reply(`🚨 **VI PHẠM LẦN ${curV}: TỊCH THU GPLMB**\nMomo: **${momo}**\nĐã thu chưa? \`!yes ${momo}\` / \`!no ${momo}\``);
           const lastNo = activeData.length > 11 ? S(activeData[11]) || null : null;
           this.startReminder(momo, { author: ctx.author.id, last_no: lastNo, old_officers: null }, ctx.channel);
         } else {
-          await ctx.reply(`✅ Đã đóng dấu vi phạm cho Momo **${momo}**. Vi phạm **${curV}** lần.`);
+          await ctx.reply(`✅ Đã đóng dấu vi phạm Momo **${momo}**: **${curV}**/5 lần.`);
         }
       });
     } catch (e) {
@@ -225,19 +227,19 @@ export default class GPLMB extends Cog {
   async yesNo(ctx, momo, kind) {
     if (ctx.channel.id !== ROOMS.GPLMB_CMD) return;
     if (!(await this.checkPermissions(ctx, kind))) return;
-    if (!momo) return ctx.reply('⚠️ Thiếu số Momo.');
+    if (!momo) return ctx.reply(`⚠️ Cú pháp: \`!${kind} <momo>\``);
 
     const logMsg = `${ctx.author.displayName} | ${fmt(toVN(ctx.message.createdAt), 'YYYY-MM-DD HH:mm:ss')} | !${kind}`;
     try {
       await this.writeLock.run(async () => {
         const { activeIdx, activeData } = await this.getActiveRow(momo);
-        if (activeIdx === -1) return ctx.reply(`❌ Không tìm thấy hồ sơ đang hoạt động cho Momo **${momo}**.`);
+        if (activeIdx === -1) return ctx.reply(`❌ Không tìm thấy GPLMB đang hoạt động của Momo **${momo}**.`);
 
         const nextCol = this.nextLogCol(activeData);
         if (kind === 'yes') {
           await this.updateCellsAndCache([cell(activeIdx, 10, 1), cell(activeIdx, 11, 0), cell(activeIdx, nextCol, logMsg)]);
           this.pendingRevokes.delete(momo); // Tắt chuông báo động
-          await ctx.reply(`✅ Đã xác nhận **TỊCH THU** GPLMB cho Momo **${momo}**.`);
+          await ctx.reply(`✅ Đã ghi nhận tịch thu GPLMB của Momo **${momo}**.`);
         } else {
           await this.updateCellsAndCache([
             cell(activeIdx, 11, 1),
@@ -245,7 +247,7 @@ export default class GPLMB extends Cog {
             cell(activeIdx, nextCol, logMsg),
           ]);
           this.pendingRevokes.delete(momo);
-          await ctx.reply(`⚠️ Đã ghi nhận **CHƯA TỊCH THU** GPLMB cho Momo **${momo}**.`);
+          await ctx.reply(`⚠️ Đã ghi nhận chưa tịch thu GPLMB của Momo **${momo}**.`);
         }
       });
     } catch (e) {
@@ -258,7 +260,7 @@ export default class GPLMB extends Cog {
   // ==========================================
   async kiemtra(ctx, momo) {
     if (ctx.channel.id !== ROOMS.GPLMB_CMD) return;
-    if (!momo) return ctx.reply('⚠️ Thiếu số Momo.');
+    if (!momo) return ctx.reply('⚠️ Cú pháp: `!kiemtra <momo>`');
 
     try {
       const { activeIdx, activeData, revokedCount, allActive } = await this.getActiveRow(momo);
@@ -274,41 +276,41 @@ export default class GPLMB extends Cog {
         if (allActive.length === 1) {
           const i = info(activeData);
           let rep =
-            `🔍 **THÔNG TIN HỒ SƠ MOMO: ${momo}**\n` +
-            `🔹 Trạng thái: 🟢 **ĐANG HOẠT ĐỘNG**\n` +
-            `🔹 Người sở hữu: **${i.chuSoHuu}**\n` +
-            `🔹 Sĩ quan cấp bằng: **${i.sqCap}**\n` +
-            `🔹 Ngày cấp: **${i.ngayCap}**\n` +
-            `🔹 Vi phạm: **${i.curV} lần**\n` +
-            `🔹 Tiền án: **${revokedCount} lần**`;
-          if (i.redAlert) rep += '\n🚨 **CẢNH BÁO ĐỎ:** YÊU CẦU TỊCH THU GPLMB NGAY LẬP TỨC!';
+            `ℹ️ GPLMB Momo **${momo}**\n` +
+            `Trạng thái: 🟢 Đang hoạt động\n` +
+            `Chủ sở hữu: **${i.chuSoHuu}**\n` +
+            `Người cấp: **${i.sqCap}**\n` +
+            `Ngày cấp: **${i.ngayCap}**\n` +
+            `Vi phạm: **${i.curV}** lần\n` +
+            `Tiền án: **${revokedCount}** lần`;
+          if (i.redAlert) rep += '\n🚨 Cần tịch thu GPLMB ngay.';
           return ctx.reply(rep);
         }
 
         let rep =
-          `🔍 **THÔNG TIN HỒ SƠ MOMO: ${momo}**\n` +
-          `🔹 Trạng thái: 🟢 **ĐANG HOẠT ĐỘNG (Phát hiện ${allActive.length} GPLMB)**\n` +
-          `🔹 Tiền án: **${revokedCount} lần**\n\n`;
+          `ℹ️ GPLMB Momo **${momo}**\n` +
+          `Trạng thái: 🟢 Đang hoạt động (**${allActive.length}** GPLMB)\n` +
+          `Tiền án: **${revokedCount}** lần\n\n`;
         let red = false;
         allActive.forEach(([, row], n) => {
           const i = info(row);
-          rep += `📑 **GPLMB ${n + 1}:**\n`;
-          rep += ` ├ Người sở hữu: **${i.chuSoHuu}**\n`;
-          rep += ` ├ Sĩ quan cấp bằng: **${i.sqCap}**\n`;
+          rep += `**GPLMB ${n + 1}**\n`;
+          rep += ` ├ Chủ sở hữu: **${i.chuSoHuu}**\n`;
+          rep += ` ├ Người cấp: **${i.sqCap}**\n`;
           rep += ` ├ Ngày cấp: **${i.ngayCap}**\n`;
-          rep += ` └ Vi phạm: **${i.curV} lần**\n\n`;
+          rep += ` └ Vi phạm: **${i.curV}** lần\n\n`;
           if (i.redAlert) red = true;
         });
-        if (red) rep += '🚨 **CẢNH BÁO ĐỎ:** YÊU CẦU TỊCH THU GPLMB NGAY LẬP TỨC!';
+        if (red) rep += '🚨 Cần tịch thu GPLMB ngay.';
         return ctx.reply(rep.trim().slice(0, 2000));
       }
 
       if (revokedCount > 0) {
         return ctx.reply(
-          `🔍 **THÔNG TIN HỒ SƠ MOMO: ${momo}**\n` +
-            `🔹 Trạng thái: 🔴 **BỊ TỊCH THU**\n` +
-            `🔹 Tiền án: **${revokedCount} lần**\n\n` +
-            `👉 Yêu cầu: Kiểm tra thực tế, nếu đối tượng vẫn còn GPLMB trong người -> Tiến hành thu bằng và bắt phạt tội Không có GPLMB!`,
+          `ℹ️ GPLMB Momo **${momo}**\n` +
+            `Trạng thái: 🔴 Đã tịch thu\n` +
+            `Tiền án: **${revokedCount}** lần\n` +
+            `Nếu đối tượng còn GPLMB trong người: thu bằng và phạt tội **Không có GPLMB**.`,
         );
       }
       await ctx.reply(`❌ Momo **${momo}** chưa từng đăng ký GPLMB.`);

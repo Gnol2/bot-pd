@@ -36,14 +36,14 @@ export default class PhongVan extends Cog {
           .filter(Boolean)
           .map((r) => r.toString());
         const ping = mentions.length
-          ? `${mentions.join(' ')} 🚨 **CÓ ĐƠN ỨNG TUYỂN MỚI NÈ CÁC SẾP ƠI!**`
-          : '🚨 **CÓ ĐƠN ỨNG TUYỂN MỚI!**';
+          ? `🚨 **ĐƠN ỨNG TUYỂN MỚI** ${mentions.join(' ')}`
+          : '🚨 **ĐƠN ỨNG TUYỂN MỚI**';
 
         for (let i = this.lastRowCount; i < current; i++) {
           const row = allRows[i];
           const embed = new EmbedBuilder()
-            .setTitle('📝 HỒ SƠ ỨNG TUYỂN GCPD')
-            .setDescription('Vừa có một công dân nộp đơn đăng ký gia nhập Sở Cảnh Sát GCPD! Chi tiết hồ sơ bên dưới:')
+            .setTitle('📝 Hồ sơ ứng tuyển GCPD')
+            .setDescription('Đơn mới từ form tuyển dụng.')
             .setColor(COLORS.green)
             .setThumbnail('https://i.imgur.com/8Qe5u9e.png')
             .setFooter({ text: 'Hệ thống Tuyển dụng GCPD' });
@@ -54,8 +54,8 @@ export default class PhongVan extends Cog {
             let answer = c < row.length ? String(row[c]).trim() : 'Không có';
             if (!question || !answer) continue;
             if (fieldCount >= 25) break; // Giới hạn Discord: 25 field / embed
-            if (answer.length > 1000) answer = answer.slice(0, 1000) + '...\n*(Câu trả lời quá dài)*';
-            embed.addFields({ name: `🔹 ${question}`.slice(0, 256), value: '```\n' + answer + '\n```', inline: false });
+            if (answer.length > 1000) answer = answer.slice(0, 1000) + '... (đã cắt)';
+            embed.addFields({ name: question.slice(0, 256), value: '```\n' + answer + '\n```', inline: false });
             fieldCount++;
           }
 

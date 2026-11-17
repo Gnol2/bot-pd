@@ -91,7 +91,7 @@ export default class SyncGCPD extends Cog {
         old?.radio ?? '', // I Radio (giữ nguyên)
       ]);
     }
-    if (!out.length) throw new Error('Không đọc được Momo ID nào từ GCPD HOME (kiểm tra cột MOMO)');
+    if (!out.length) throw new Error('Không đọc được Momo ID nào từ GCPD HOME (kiểm tra cột MOMO).');
 
     const added = out.filter((r) => !existing.has(r[2])).length;
     const removed = [...existing.keys()].filter((m) => !seen.has(m)).length;
@@ -106,7 +106,7 @@ export default class SyncGCPD extends Cog {
     try {
       const src = await this.bot.gs.worksheet(SHEET_IDS.HOME, 'GCPD HOME');
       const data = await src.getAllValues();
-      if (!data.length) return [false, 'Bảng GCPD HOME hiện đang trống, không có gì để copy!'];
+      if (!data.length) return [false, '`GCPD HOME` đang trống.'];
 
       await this.copyToDanhSach(data);
 
@@ -114,14 +114,14 @@ export default class SyncGCPD extends Cog {
       if (await this.bot.sheets.online.hasFormulas('A2:G')) {
         return [
           true,
-          `Đã đồng bộ **${data.length} dòng** sang \`Danh-Sach-PD\`. Tab \`Online\` đang tự cập nhật bằng công thức nên bot không ghi đè.`,
+          `**${data.length}** dòng → \`Danh-Sach-PD\`. Bỏ qua \`Online\` (tab dùng công thức).`,
         ];
       }
       const o = await this.syncOnline(data);
 
       return [
         true,
-        `Đã đồng bộ **${data.length} dòng** sang \`Danh-Sach-PD\` và **${o.total} sĩ quan** sang \`Online\` (mới: ${o.added}, đã gỡ: ${o.removed}, bỏ qua bị sa thải: ${o.fired}).`,
+        `**${data.length}** dòng → \`Danh-Sach-PD\`, **${o.total}** người → \`Online\` (mới: ${o.added}, gỡ: ${o.removed}, bỏ qua sa thải: ${o.fired}).`,
       ];
     } catch (e) {
       return [false, e.message];
@@ -137,12 +137,10 @@ export default class SyncGCPD extends Cog {
 
   async forceSync(ctx) {
     const m = ctx.author;
-    if (!isBotAdmin(m)) {
-      return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
-    }
+    if (!isBotAdmin(m)) return ctx.send(NO_PERM);
     const alert = await ctx.send('⏳ Đang đồng bộ `GCPD HOME` → `Danh-Sach-PD` + `Online`...');
     const [ok, msg] = await this.performSync();
-    if (ok) await alert.edit(`✅ **ĐỒNG BỘ HOÀN TẤT:** ${msg}`);
-    else await alert.edit(`❌ **LỖI ĐỒNG BỘ:** Lỗi kỹ thuật: \`${msg}\``);
+    if (ok) await alert.edit(`✅ Đồng bộ xong: ${msg}`);
+    else await alert.edit(`❌ Lỗi: ${msg}`);
   }
 }

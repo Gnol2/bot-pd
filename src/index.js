@@ -60,7 +60,7 @@ async function openSheets() {
 const cogs = new Map();
 
 async function loadCog(name) {
-  if (!/^\w+$/.test(name)) throw new Error('Tên module không hợp lệ');
+  if (!/^\w+$/.test(name)) throw new Error('Tên module không hợp lệ.');
   if (cogs.has(name)) throw new Error(`Module ${name} đã được load rồi`);
   const file = path.join(__dirname, 'cogs', `${name}.js`);
   const mod = await import(`${pathToFileURL(file).href}?v=${Date.now()}`);
@@ -80,29 +80,29 @@ function unloadCog(name) {
 // ==========================================
 const adminCommands = {
   async load(ctx, name) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     try {
       await loadCog(name);
-      await ctx.send(`✅ **ĐIỀU ĐỘNG THÀNH CÔNG:** Phòng ban \`cogs.${name}\` đã hoạt động!`);
+      await ctx.send(`✅ Đã load \`cogs.${name}\`.`);
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }
   },
   async unload(ctx, name) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     try {
       unloadCog(name);
-      await ctx.send(`🛑 **ĐÌNH CHỈ THÀNH CÔNG:** Phòng ban \`cogs.${name}\` đã bị tạm dừng!`);
+      await ctx.send(`✅ Đã unload \`cogs.${name}\`.`);
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }
   },
   async reload(ctx, name) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ TỪ CHỐI LỆNH: Đồng chí không có thẩm quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     try {
       unloadCog(name);
       await loadCog(name);
-      await ctx.send(`♻️ **HOT-RELOAD THÀNH CÔNG:** Cập nhật \`cogs.${name}\` xong!`);
+      await ctx.send(`✅ Đã reload \`cogs.${name}\`.`);
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }

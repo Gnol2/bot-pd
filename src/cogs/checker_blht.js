@@ -121,9 +121,7 @@ export default class CheckerBLHT extends Cog {
         let lyDo = '';
 
         if (!invoices.length || !momoLapRaw) {
-          lyDo =
-            '❌ **MDT BỎ TRỐNG THÔNG TIN:** Hóa đơn đang là $0 hoặc không tìm thấy Momo Sĩ quan lập.\n' +
-            '*(Yêu cầu điền đầy đủ dữ liệu để hệ thống kiểm tra!)*';
+          lyDo = 'MDT thiếu thông tin: hóa đơn $0 hoặc không có momo người lập.';
         } else {
           const tgUtc = vnToUtc(tg);
           const msgs = [];
@@ -148,10 +146,10 @@ export default class CheckerBLHT extends Cog {
               if (foundVipham) valid = true;
               else
                 lyDo =
-                  `❌ **Không tìm thấy đóng dấu \`!vipham\`** cho đối tượng **${momoTp}** trong vòng 15 phút trước/sau khi lập MDT.\n` +
-                  `*(Lý do: Hóa đơn **$${money(tien)}**(Đã cộng 5% thuế) chưa đạt mức tối thiểu $22,000 nên BẮT BUỘC phải có đóng dấu giải trình).*`;
+                  `Không có \`!vipham\` cho **${momoTp}** trong ±15 phút quanh MDT. ` +
+                  `Hóa đơn **$${money(tien)}** (đã gồm 5% thuế) dưới $22,000 nên bắt buộc đóng dấu.`;
             } else {
-              lyDo = `📝 **Phạt sai số tiền quy định:** Hóa đơn của đối tượng **${momoTp}** chỉ có **$${money(tien)}**(Đã cộng 5% thuế) (Thấp hơn mức tối thiểu $7,000).`;
+              lyDo = `Phạt sai mức: hóa đơn của **${momoTp}** chỉ **$${money(tien)}** (đã gồm 5% thuế), dưới mức tối thiểu $7,000.`;
             }
             if (valid) {
               isRowValid = true;
@@ -188,31 +186,31 @@ export default class CheckerBLHT extends Cog {
         const uniqueLq = uniq(lqDisplays);
 
         const embed = new EmbedBuilder()
-          .setTitle('📋 BIÊN BẢN GHI NHẬN SAI PHẠM')
+          .setTitle('📋 Vi phạm MDT BLHT')
           .setColor(COLORS.red)
           .setThumbnail('https://i.imgur.com/8Qe5u9e.png')
-          .addFields({ name: '👮 Sĩ quan thực hiện', value: officerMain, inline: false });
-        if (uniqueLq.length) embed.addFields({ name: '👥 Sĩ quan liên quan', value: uniqueLq.join('\n').slice(0, 1024), inline: false });
+          .addFields({ name: '👮 Người lập', value: officerMain, inline: false });
+        if (uniqueLq.length) embed.addFields({ name: '👥 Liên quan', value: uniqueLq.join('\n').slice(0, 1024), inline: false });
         embed.addFields(
-          { name: '🎯 Đối tượng (Momo)', value: momoTpRaw ? `**${momoTpRaw}**` : '*(Bỏ trống)*', inline: true },
-          { name: '📑 Số ID MDT', value: `**${idMdt}**\n*(Lập lúc: ${tgStr})*`, inline: true },
+          { name: '🎯 Đối tượng (momo)', value: momoTpRaw ? `**${momoTpRaw}**` : '*(trống)*', inline: true },
+          { name: '📑 ID MDT', value: `**${idMdt}**\n*(${tgStr})*`, inline: true },
           {
-            name: '⚠️ Chi tiết vi phạm',
+            name: '⚠️ Lý do',
             value: (
               `${lyDo}\n\n` +
-              '📌 **Quy định chung:**\n' +
-              '- **Diện CÓ GPLMB:** Phạt từ $7,000 - $10,000 và **BẮT BUỘC** đóng dấu `!vipham`.\n' +
-              '- **Diện KHÔNG GPLMB:** Tổng hóa đơn tối thiểu **$22,000**.\n\n' +
-              '🔥 **Yêu cầu các Sĩ quan liên đới giải trình!**'
+              'Quy định:\n' +
+              '- Có GPLMB: phạt $7,000 - $10,000 và bắt buộc đóng dấu `!vipham`.\n' +
+              '- Không GPLMB: tổng hóa đơn tối thiểu **$22,000**.\n\n' +
+              'Yêu cầu những người liên quan giải trình.'
             ).slice(0, 1024),
             inline: false,
           },
         );
-        embed.setFooter({ text: 'Hệ thống Giám sát Nghiệp vụ Tự động GCPD' });
+        embed.setFooter({ text: 'GCPD • Kiểm tra tự động' });
 
         try {
           await doiBay.send({
-            content: `🚨 **PHÁT HIỆN LỖI NGHIỆP VỤ (BLHT)** 🚨 ${roleMentionStr} ${[...pings].join(' ')}`,
+            content: `🚨 **VI PHẠM MDT BLHT** ${roleMentionStr} ${[...pings].join(' ')}`,
             embeds: [embed],
             allowedMentions: { parse: ['roles', 'users'] },
           });

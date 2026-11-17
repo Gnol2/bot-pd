@@ -122,7 +122,7 @@ export const callsignOf = (displayName) => String(displayName ?? '').split('|')[
 
 // Quyền quản lý bot: chỉ role BOT_ADMIN_ROLE ("PD bot admin")
 export const isBotAdmin = (member) => hasRole(member, BOT_ADMIN_ROLE);
-export const NO_PERM = `❌ Chỉ role **${BOT_ADMIN_ROLE}** được dùng lệnh này!`;
+export const NO_PERM = `❌ Cần role **${BOT_ADMIN_ROLE}**.`;
 
 // Tương đương utils.lay_member_theo_callsign / lay_id_theo_callsign:
 // lấy thành viên đầu tiên có display name BẮT ĐẦU bằng callsign.

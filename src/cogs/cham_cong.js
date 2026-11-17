@@ -290,7 +290,7 @@ export default class ChamCong extends Cog {
     const sunEnd = addMs(mon, 7 * DAY_MS);
     const ch = this.bot.channels.cache.get(ROOMS.DUTY);
     if (!ch) return ctx.reply('❌ Không thấy kênh Duty.');
-    const wait = await ctx.reply(`⏳ Đang đọc lịch sử kênh Duty để dựng lại giờ trực tuần **${weekTabName(mon)}**...`);
+    const wait = await ctx.reply(`⏳ Đang dựng lại giờ trực tuần **${weekTabName(mon)}** từ kênh Duty...`);
 
     return this.withLock(async () => {
       const { from, to } = weekScanRange(mon);
@@ -304,13 +304,13 @@ export default class ChamCong extends Cog {
         }
       }
       const { perMomo, open } = buildWeek(events, mon);
-      if (!perMomo.size) return wait.edit(`📭 Không có phiên ON-OFF nào trong tuần ${weekTabName(mon)} (đã đọc ${n} tin).`);
+      if (!perMomo.size) return wait.edit(`📭 Không có phiên ON-OFF nào trong tuần **${weekTabName(mon)}** (đã đọc **${n}** tin).`);
 
       let tab;
       try {
         tab = await this.weekSheet(mon);
       } catch (e) {
-        if (e.code === TAB_MISSING) return wait.edit(`❌ ${e.message}. Tạo tab \`${weekTabName(mon)}\` rồi chạy lại lệnh.`);
+        if (e.code === TAB_MISSING) return wait.edit(`❌ ${e.message}. Tạo tab \`${weekTabName(mon)}\` rồi chạy lại.`);
         throw e;
       }
       const rows = await tab.getAllValues();
@@ -336,9 +336,9 @@ export default class ChamCong extends Cog {
       await tab.ensureSize(next, DAY_COL0 + 6);
       await tab.updateCells(cells, 'RAW');
       return wait.edit(
-        `✅ Đã dựng lại giờ trực tuần **${weekTabName(mon)}** cho **${perMomo.size}** sĩ quan (đọc ${n} tin Duty).` +
-          (added.length ? `\n➕ Thêm mới vào danh sách: ${added.join(', ')}` : '') +
-          (Object.keys(open).length ? `\n⏳ ${Object.keys(open).length} người đang ON chưa OFF — sẽ tự ghi khi OFF.` : ''),
+        `✅ Đã dựng lại tuần **${weekTabName(mon)}**: **${perMomo.size}** người (đọc **${n}** tin Duty).` +
+          (added.length ? `\nThêm mới: ${added.join(', ')}` : '') +
+          (Object.keys(open).length ? `\nĐang ON: **${Object.keys(open).length}** người, sẽ ghi khi OFF.` : ''),
       );
     });
   }
@@ -346,7 +346,7 @@ export default class ChamCong extends Cog {
   // ---------- !helpchamcong ----------
   async cmdHelp(ctx) {
     const embed = new EmbedBuilder()
-      .setTitle('📖 HƯỚNG DẪN CHẤM CÔNG TỰ ĐỘNG')
+      .setTitle('📖 Hướng dẫn chấm công')
       .setColor(COLORS.blue)
       .setDescription(
         `Bot đọc kênh <#${ROOMS.DUTY}>: **ON DUTY** lưu giờ vào bộ nhớ tạm, **OFF DUTY** ghi \`HH:mm - HH:mm\` vào file Lương ` +
@@ -354,18 +354,18 @@ export default class ChamCong extends Cog {
       )
       .addFields(
         {
-          name: `🛡️ Lệnh quản lý (role ${BOT_ADMIN_ROLE})`,
+          name: `Lệnh quản lý (role ${BOT_ADMIN_ROLE})`,
           value: [
-            '`!list` (hoặc `!chamcong`) — xem toàn bộ PD đang ON, giờ ON và đã ON bao lâu',
-            '`!leave <momo|callsign> [...]` — xoá PD khỏi danh sách đang ON, **không ghi giờ**',
+            '`!list` (hoặc `!chamcong`) — danh sách đang ON, giờ ON, thời lượng',
+            '`!leave <momo|callsign> [...]` — xoá khỏi danh sách ON, **không ghi giờ**',
             '  ↳ `!leave 548` · `!leave 15200 35233`',
-            '`!updatechamcong [dd/mm/yyyy]` — đọc lại lịch sử kênh Duty, **dựng lại giờ trực cả tuần** (ghi đè E:K của người có phiên)',
+            '`!updatechamcong [dd/mm/yyyy]` — dựng lại giờ trực cả tuần từ kênh Duty (ghi đè E:K của người có phiên)',
             '  ↳ `!updatechamcong` (tuần này) · `!updatechamcong 10/11/2026` (tuần chứa ngày đó)',
-            '`!helpchamcong` — xem hướng dẫn này',
+            '`!helpchamcong` — hướng dẫn này',
           ].join('\n'),
         },
         {
-          name: '📌 Quy tắc ghi giờ',
+          name: 'Quy tắc ghi giờ',
           value: [
             '• OFF mà không có ON trước đó → bỏ qua.',
             '• ON lặp lại → giữ giờ ON đầu tiên.',
@@ -375,7 +375,7 @@ export default class ChamCong extends Cog {
           ].join('\n'),
         },
         {
-          name: '⚠️ Lưu ý',
+          name: 'Lưu ý',
           value: [
             '• Tab tuần **tạo tay**, đúng tên dạng `23/11-29/11`. Chưa có tab → bot giữ phiên và thử ghi lại mỗi 10 phút.',
             '• Ghi sheet lỗi (mạng/Google) → cũng giữ lại và thử lại, không mất giờ.',
@@ -396,9 +396,9 @@ export default class ChamCong extends Cog {
     if (!this.isAdmin(ctx)) return ctx.reply(NO_PERM);
     const list = Object.entries(this.mem.open).sort((a, b) => a[1].t - b[1].t);
     const pend = this.mem.pending.length
-      ? `\n⏸️ **${this.mem.pending.length}** phiên chưa ghi được vào sheet (sẽ thử lại mỗi 10 phút), tuần: ${[...new Set(this.mem.pending.map((p) => weekTabName(new Date(p.mon))))].join(', ')}`
+      ? `\nChờ ghi sheet: **${this.mem.pending.length}** phiên (thử lại mỗi 10 phút), tuần: ${[...new Set(this.mem.pending.map((p) => weekTabName(new Date(p.mon))))].join(', ')}`
       : '';
-    if (!list.length) return ctx.reply(`📭 Hiện không có ai đang ON DUTY trong bộ nhớ chấm công.${pend}`);
+    if (!list.length) return ctx.reply(`📭 Không có ai đang ON DUTY.${pend}`);
 
     const now = Date.now();
     const lines = list.map(([momo, o], i) => {
@@ -407,11 +407,11 @@ export default class ChamCong extends Cog {
       const warn = now - o.t > STALE_ON_MS / 2 ? ' ⚠️' : '';
       return `\`${p2(i + 1)}\` **${o.cs || '?'} | ${o.name || '?'}** — Momo \`${momo}\` — ON từ ${fmt(toVN(o.t), 'HH:mm DD/MM')} (${dur})${warn}`;
     });
-    const footer = `${pend}\n*Xoá người khỏi danh sách (không ghi giờ): \`!leave <momo|callsign>\`* · ⚠️ = ON quá ${STALE_ON_MS / HOUR_MS / 2} tiếng`;
+    const footer = `${pend}\nXoá (không ghi giờ): \`!leave <momo|callsign>\` · ⚠️ = ON quá ${STALE_ON_MS / HOUR_MS / 2} tiếng`;
 
     // Chia nhiều tin nếu danh sách dài
     const chunks = [];
-    let cur = `🕒 **Đang ON DUTY (${list.length})**`;
+    let cur = `ℹ️ Đang ON DUTY: **${list.length}**`;
     for (const l of lines) {
       if (cur.length + l.length + 1 > 1900) {
         chunks.push(cur);
@@ -432,7 +432,7 @@ export default class ChamCong extends Cog {
   async cmdLeave(ctx, args) {
     if (!this.isAdmin(ctx)) return ctx.reply(NO_PERM);
     const keys = args.map((a) => S(a)).filter(Boolean);
-    if (!keys.length) return ctx.reply('⚠️ Cú pháp: `!leave <momo|callsign> [momo|callsign ...]` — xem danh sách bằng `!list`');
+    if (!keys.length) return ctx.reply('⚠️ Cú pháp: `!leave <momo|callsign> [momo|callsign ...]`');
 
     return this.withLock(async () => {
       const removed = [];
@@ -449,8 +449,8 @@ export default class ChamCong extends Cog {
         this.saveMemory();
         console.log(`🗑️ [ChamCong] ${callsignOf(ctx.author.displayName)} xoá khỏi danh sách ON: ${removed.join('; ')}`);
       }
-      let msg = removed.length ? `🗑️ Đã xoá khỏi danh sách ON (không ghi giờ vào sheet):\n• ${removed.join('\n• ')}` : '';
-      if (notFound.length) msg += `${msg ? '\n' : ''}❓ Không có trong danh sách ON: ${notFound.map((k) => `\`${k}\``).join(', ')}`;
+      let msg = removed.length ? `✅ Đã xoá **${removed.length}** người khỏi danh sách ON (không ghi giờ):\n• ${removed.join('\n• ')}` : '';
+      if (notFound.length) msg += `${msg ? '\nKhông' : '📭 Không'} có trong danh sách ON: ${notFound.map((k) => `\`${k}\``).join(', ')}`;
       return ctx.reply(msg);
     });
   }

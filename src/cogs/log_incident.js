@@ -98,19 +98,19 @@ export default class LogIncident extends Cog {
       if (violator) performer += ` (${violator})`;
 
       const embed = new EmbedBuilder()
-        .setTitle('⚠️ CẢNH BÁO TỰ Ý CHỈNH SỬA MDT')
-        .setDescription('Hệ thống phát hiện Sĩ quan **không phải Người lập** đã tự ý tác động/chỉnh sửa vào hồ sơ MDT của người khác.')
+        .setTitle('Sửa MDT không phải của mình')
+        .setDescription('Người sửa không phải tác giả MDT.')
         .setColor(COLORS.red)
         .addFields(
-          { name: '👮 Người thực hiện chỉnh sửa', value: performer, inline: false },
-          { name: '✍️ Tác giả MDT', value: `**${tacGiaFull || 'Không rõ'}**`, inline: false },
-          { name: '📑 Số ID MDT', value: `**#${incId}**` + (tieuDe ? ` *(Tiêu đề: ${tieuDe})*` : ''), inline: true },
-          { name: '🕒 Thời gian chỉnh sửa', value: `\`${ts}\``, inline: true },
+          { name: 'Người sửa', value: performer, inline: false },
+          { name: 'Tác giả', value: `**${tacGiaFull || 'Không rõ'}**`, inline: false },
+          { name: 'MDT', value: `**#${incId}**` + (tieuDe ? ` (${tieuDe})` : ''), inline: true },
+          { name: 'Thời gian', value: `\`${ts}\``, inline: true },
         )
-        .setFooter({ text: 'Hệ thống tự động giám sát MDT.' });
+        .setFooter({ text: 'Giám sát MDT tự động' });
 
       await vp.send({
-        content: `🚨 **PHÁT HIỆN CHỈNH SỬA MDT TRÁI PHÉP** 🚨 ${pingParts.join(' ')}`,
+        content: `🚨 **SỬA MDT TRÁI PHÉP** ${pingParts.join(' ')}`,
         embeds: [embed],
         allowedMentions: { parse: ['roles', 'users'] },
       });
@@ -366,35 +366,35 @@ export default class LogIncident extends Cog {
 
   // !updateincident [dd/mm/yyyy] [dd/mm/yyyy]
   async updateIncident(ctx, fromStr, toStr) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
 
     const now = nowVN();
     let from, to;
     if (!fromStr) {
       from = addMs(now, -24 * HOUR_MS);
       to = now;
-      await ctx.send('⏳ **Đang khởi động Radar quét bù dữ liệu Incident 24h qua...**\n*(Sếp có thể quét theo ngày: `!updateincident 01/07/2026 15/07/2026`)*');
+      await ctx.send('⏳ Đang quét bù Incident 24h qua...\nℹ️ Quét theo ngày: `!updateincident 01/07/2026 15/07/2026`');
     } else {
       from = parseDMY(fromStr);
       const toDay = toStr ? parseDMY(toStr) : now;
       if (!from || !toDay) {
-        return ctx.send('❌ **Sai định dạng!** Vui lòng nhập chuẩn: `dd/mm/yyyy` (Ví dụ: `!updateincident 01/07/2026 15/07/2026`).');
+        return ctx.send('⚠️ Cú pháp: `!updateincident [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updateincident 01/07/2026 15/07/2026`');
       }
       to = endOfDay(toDay);
-      await ctx.send(`⏳ **Radar khởi động chiến dịch Backfill Incident...**\n*(Mốc: Từ ${fmt(from, 'DD/MM/YYYY')} đến ${fmt(to, 'DD/MM/YYYY')})*`);
+      await ctx.send(`⏳ Đang quét bù Incident từ **${fmt(from, 'DD/MM/YYYY')}** đến **${fmt(to, 'DD/MM/YYYY')}**...`);
     }
 
     try {
       const channel = this.bot.channels.cache.get(ROOMS.INCIDENT);
-      if (!channel) return ctx.send('❌ Không tìm thấy kênh Log Incident!');
+      if (!channel) return ctx.send('❌ Không tìm thấy kênh log Incident.');
 
       const dict = await this.collectValidIncidents(channel, vnToUtc(from), vnToUtc(to));
-      if (!dict.size) return ctx.send('📭 Không có dữ liệu Incident hợp lệ nào trong thời gian này.');
+      if (!dict.size) return ctx.send('📭 Không có Incident hợp lệ trong khoảng này.');
 
       this.queue.push(...dict.values());
-      await ctx.send(`✅ Đã quét và lọc thành công **${dict.size}** biên bản Incident hợp lệ vào hàng đợi!\n*(Trạm Xe Buýt sẽ tự động đối chiếu và đẩy lên Sheet theo cụm)*`);
+      await ctx.send(`✅ Đã đưa **${dict.size}** Incident vào hàng đợi ghi sheet.`);
     } catch (e) {
-      await ctx.send(`❌ Lỗi quét bù Incident: ${e.message}`);
+      await ctx.send(`❌ Lỗi: ${e.message}`);
     }
   }
 

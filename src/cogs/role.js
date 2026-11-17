@@ -128,13 +128,13 @@ export default class Role extends Cog {
   }
 
   async updateRole(ctx, limitArg) {
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     const limit = limitArg && /^\d+$/.test(limitArg) ? parseInt(limitArg, 10) : 1000;
 
-    await ctx.send(`⏳ **Radar đang quét ${limit} log Thay Đổi Chức Vụ/Sa Thải gần nhất...**`);
+    await ctx.send(`⏳ Đang quét **${limit}** log đổi chức vụ/sa thải gần nhất...`);
     try {
       const channel = this.bot.channels.cache.get(ROOMS.ROLE);
-      if (!channel) return ctx.send('❌ Không tìm thấy kênh Log Role!');
+      if (!channel) return ctx.send('❌ Không tìm thấy kênh log Role.');
 
       const updates = new Map();
       for await (const message of history(channel, { limit })) {
@@ -146,11 +146,11 @@ export default class Role extends Cog {
         }
       }
 
-      if (!updates.size) return ctx.send('📭 Không tìm thấy dữ liệu Thay đổi chức vụ nào hợp lệ.');
+      if (!updates.size) return ctx.send('📭 Không có log đổi chức vụ hợp lệ.');
       for (const pkg of updates.values()) this.queue.push(pkg);
-      await ctx.send(`✅ Đã quét và gom thành công **${updates.size}** yêu cầu nâng/hạ cấp/sa thải vào hàng đợi!`);
+      await ctx.send(`✅ Đã đưa **${updates.size}** thay đổi chức vụ vào hàng đợi.`);
     } catch (e) {
-      await ctx.send(`❌ Lỗi quét bù Role: ${e.message}`);
+      await ctx.send(`❌ Lỗi: ${e.message}`);
     }
   }
 }

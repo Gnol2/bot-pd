@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { cell, COLORS, history, nowVN, toVN, vnToUtc, addMs, DAY_MS, startOfDay, endOfDay, weekday, fmt, parseDMY, isBotAdmin } from '../utils.js';
+import { cell, COLORS, history, nowVN, toVN, vnToUtc, addMs, DAY_MS, startOfDay, endOfDay, weekday, fmt, parseDMY, isBotAdmin, NO_PERM } from '../utils.js';
 
 const DAYS_VN = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 const PLANE = 'hoạt động buôn hàng trắng bằng máy bay';
@@ -154,32 +154,29 @@ export default class Dispatch extends Cog {
 
   // !updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]
   async updateDispatch(ctx, fromStr, toStr) {
-    if (!this.hasPerm(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const r = this.parseRange(fromStr, toStr);
-    if (!r) return ctx.send('❌ **Sai định dạng!** Vui lòng nhập chuẩn: `dd/mm/yyyy`');
+    if (!r) return ctx.send('⚠️ Cú pháp: `!updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updatedispatch 01/11/2026 07/11/2026`');
 
-    const msg = await ctx.send(`⏳ **Đang đồng bộ dữ liệu Dispatch ${r.title} lên Google Sheets...**`);
+    const msg = await ctx.send(`⏳ Đang đồng bộ Dispatch ${r.title} lên Sheets...`);
     try {
       const channel = this.bot.channels.cache.get(ROOMS.DISPATCH);
-      if (!channel) return msg.edit('❌ Không tìm thấy kênh Dispatch! Đề nghị Sếp kiểm tra lại ID phòng.');
+      if (!channel) return msg.edit('❌ Không tìm thấy kênh Dispatch (kiểm tra ID phòng).');
       const [u, a] = await this.processAndSync(r.start, r.end, channel);
-      if (u === 0 && a === 0) await msg.edit(`📭 Không có dữ liệu tội phạm mới nào để ghi vào Sheet trong ${r.title}.`);
-      else
-        await msg.edit(
-          `✅ **ĐỒNG BỘ THÀNH CÔNG!**\n🔹 Ghi đè cập nhật: **${u}** ngày cũ.\n🔹 Ghi mới hoàn toàn: **${a}** ngày vào dòng trống cuối bảng!`,
-        );
+      if (u === 0 && a === 0) await msg.edit(`📭 Không có dữ liệu Dispatch ${r.title}.`);
+      else await msg.edit(`✅ Đồng bộ Dispatch xong: cập nhật **${u}** ngày, thêm mới **${a}** ngày.`);
     } catch (e) {
-      await msg.edit(`❌ **Đã xảy ra lỗi:** ${e.message}`);
+      await msg.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 
   // !dispatch [dd/mm/yyyy] [dd/mm/yyyy]
   async dispatchStat(ctx, fromStr, toStr) {
-    if (!this.hasPerm(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const r = this.parseRange(fromStr, toStr);
-    if (!r) return ctx.send('❌ **Sai định dạng!** Vui lòng nhập chuẩn: `dd/mm/yyyy`');
+    if (!r) return ctx.send('⚠️ Cú pháp: `!dispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!dispatch 01/11/2026 07/11/2026`');
 
-    const msg = await ctx.send(`⏳ **Hệ thống đang rà soát dữ liệu Dispatch ${r.title} ...**`);
+    const msg = await ctx.send(`⏳ Đang thống kê Dispatch ${r.title}...`);
     try {
       const channel = this.bot.channels.cache.get(ROOMS.DISPATCH);
       if (!channel) return msg.edit('❌ Không tìm thấy kênh Dispatch!');
@@ -206,7 +203,7 @@ export default class Dispatch extends Cog {
         total++;
       }
 
-      if (!data.size) return msg.edit(`📭 Thành phố bình yên! Không có vụ án nào được ghi nhận trong ${r.title}.`);
+      if (!data.size) return msg.edit(`📭 Không có Dispatch nào ${r.title}.`);
 
       const sorted = [...data.entries()].sort((a, b) => b[1].total - a[1].total);
       let stat = '';
@@ -215,7 +212,7 @@ export default class Dispatch extends Cog {
           .sort((a, b) => parseInt(a[0], 10) - parseInt(b[0], 10))
           .map(([b, c]) => `${b}: \`${c}\``)
           .join(' | ');
-        const line = `🚨 **${name}**: \`${d.total}\` vụ\n└ 🕒 ${br}\n\n`;
+        const line = `**${name}**: \`${d.total}\` vụ\n└ ${br}\n\n`;
         if (stat.length + line.length < 4000) stat += line;
         else {
           stat += '...\n*(Vượt quá giới hạn)*';
@@ -224,24 +221,24 @@ export default class Dispatch extends Cog {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle(`📊 BÁO CÁO DISPATCH (${r.title})`)
+        .setTitle(`📊 Dispatch ${r.title}`)
         .setColor(COLORS.red)
         .setThumbnail('https://i.imgur.com/8Qe5u9e.png')
-        .setDescription(`**Tổng số lượng điều động:** \`${total}\` vụ\n\n${stat}`.slice(0, 4096))
-        .setFooter({ text: 'Hệ thống Thống kê Tội phạm Tự động GCPD' });
+        .setDescription(`Tổng: \`${total}\` vụ\n\n${stat}`.slice(0, 4096))
+        .setFooter({ text: 'GCPD Dispatch' });
 
       await msg.edit({ content: null, embeds: [embed] });
     } catch (e) {
-      await msg.edit(`❌ **Đã xảy ra lỗi:** ${e.message}`);
+      await msg.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 
   // !dispatchlist [limit]
   async dispatchList(ctx, limitArg) {
-    if (!this.hasPerm(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const limit = limitArg && /^\d+$/.test(limitArg) ? parseInt(limitArg, 10) : 5000;
 
-    const msg = await ctx.send(`⏳ **Đang rà soát ${limit} log gần nhất để tổng hợp danh sách các loại Dispatch...**`);
+    const msg = await ctx.send(`⏳ Đang quét **${limit}** log Dispatch gần nhất...`);
     try {
       const channel = this.bot.channels.cache.get(ROOMS.DISPATCH);
       if (!channel) return msg.edit('❌ Không tìm thấy kênh Dispatch!');
@@ -252,7 +249,7 @@ export default class Dispatch extends Cog {
         const name = incidentNameOf(message.embeds[0]);
         if (name) unique.add(name);
       }
-      if (!unique.size) return msg.edit('📭 Không tìm thấy loại Dispatch nào trong lịch sử quét.');
+      if (!unique.size) return msg.edit('📭 Không tìm thấy loại Dispatch nào.');
 
       const list = [...unique].sort();
       let desc = '';
@@ -266,13 +263,13 @@ export default class Dispatch extends Cog {
       }
 
       const embed = new EmbedBuilder()
-        .setTitle('📋 TỪ ĐIỂN CÁC LOẠI DISPATCH GCPD')
+        .setTitle('📋 Các loại Dispatch')
         .setColor(COLORS.blue)
         .setDescription(desc)
-        .setFooter({ text: `Tổng cộng: ${list.length} loại tội phạm được phát hiện.` });
+        .setFooter({ text: `Tổng: ${list.length} loại` });
       await msg.edit({ content: null, embeds: [embed] });
     } catch (e) {
-      await msg.edit(`❌ **Đã xảy ra lỗi:** ${e.message}`);
+      await msg.edit(`❌ Lỗi: ${e.message}`);
     }
   }
 }

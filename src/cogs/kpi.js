@@ -88,20 +88,20 @@ export default class KPI extends Cog {
   // ==========================================
   async top(ctx, sheetNameArg) {
     if (ctx.channel.id !== ROOMS.KPI) return;
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ Đồng chí không có quyền!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
 
     const nowMs = Date.now();
     if (this.lastTopTime && nowMs - this.lastTopTime < 10_000) {
-      return ctx.send(`⏳ Bot đang bận tải dữ liệu, chờ ${Math.trunc(10 - (nowMs - this.lastTopTime) / 1000)}s.`);
+      return ctx.send(`⚠️ Bot đang tải dữ liệu, thử lại sau **${Math.trunc(10 - (nowMs - this.lastTopTime) / 1000)}s**.`);
     }
     this.lastTopTime = nowMs;
 
     const w = this.weekInfo(sheetNameArg);
-    if (!w) return ctx.send('❌ Sai định dạng tuần!');
+    if (!w) return ctx.send('❌ Tuần không hợp lệ. Ví dụ: `!top 31/8-6/9`');
     const reqEnd = addMs(w.start, 7 * DAY_MS - 1000);
 
     try {
-      const loading = await ctx.send('⏳ *(Đang truy xuất dữ liệu Bảng Vàng từ máy chủ, vui lòng đợi...)*');
+      const loading = await ctx.send('⏳ Đang tải bảng xếp hạng...');
 
       const momoToCurrentCs = new Map();
       try {
@@ -162,13 +162,13 @@ export default class KPI extends Cog {
         : '📭 Chưa có dữ liệu.\n';
 
       const embed = new EmbedBuilder()
-        .setTitle(`🏆 BẢNG VÀNG THÀNH TÍCH (Tuần: ${w.sheetName})`)
+        .setTitle(`🏆 Bảng xếp hạng tuần ${w.sheetName}`)
         .setColor(COLORS.gold)
         .addFields(
-          { name: '💰 TOP 10 KIẾM TIỀN NHIỀU NHẤT CHO ĐỒN', value: descMoney.slice(0, 1024), inline: false },
-          { name: '🕵️ TOP 10 CHĂM CHỈ (KPI VỤ ÁN)', value: descKpi.slice(0, 1024), inline: false },
+          { name: '💰 Top 10 tiền hóa đơn', value: descMoney.slice(0, 1024), inline: false },
+          { name: '🕵️ Top 10 KPI vụ án', value: descKpi.slice(0, 1024), inline: false },
         )
-        .setFooter({ text: 'GCPD High Command • Dữ liệu trích xuất tự động' });
+        .setFooter({ text: 'GCPD • Dữ liệu tự động' });
 
       await loading.delete().catch(() => {});
       await ctx.send({ embeds: [embed] });
@@ -194,11 +194,11 @@ export default class KPI extends Cog {
     }
 
     if (targetMomo && !isBotAdmin(ctx.author)) {
-      return ctx.reply('❌ **TỪ CHỐI TRUY CẬP:** Sĩ quan không có thẩm quyền kiểm tra KPI của người khác!');
+      return ctx.reply(NO_PERM);
     }
 
     const w = this.weekInfo(sheetNameArg);
-    if (!w) return ctx.reply('❌ Sai định dạng tuần! (Ví dụ đúng: 31/8-6/9)');
+    if (!w) return ctx.reply('❌ Tuần không hợp lệ. Ví dụ: `!kpi 31/8-6/9`');
 
     const prevStart = addMs(w.start, -7 * DAY_MS);
     const prevEnd = addMs(prevStart, 6 * DAY_MS);
@@ -306,51 +306,51 @@ export default class KPI extends Cog {
         const targetGio = isNu ? 14 * 0.5 : 14;
         const targetNgay = isNu ? 5 * 0.5 : 5;
 
-        let desc = `👮 **Sĩ Quan:** ${targetDisplay}\n`;
-        if (form === 'v3' && S(at(row, 3))) desc += `🎖️ **Chức vụ:** ${S(at(row, 3))}\n`;
-        desc += `🆔 **Momo:** ${mid}\n`;
-        desc += `🚻 **Giới tính:** ${gioiTinh}\n\n`;
-        desc += '📋 ** CHỈ TIÊU TUẦN CẦN HOÀN THÀNH **\n';
-        desc += `• Thời gian trực : \`${fmtG(gioTruc)} / ${fmtG(targetGio)}\` giờ\n`;
+        let desc = `👮 Sĩ quan: **${targetDisplay}**\n`;
+        if (form === 'v3' && S(at(row, 3))) desc += `🎖️ Chức vụ: **${S(at(row, 3))}**\n`;
+        desc += `🆔 Momo: **${mid}**\n`;
+        desc += `🚻 Giới tính: ${gioiTinh}\n\n`;
+        desc += '📋 **Chỉ tiêu tuần**\n';
+        desc += `• Giờ trực: \`${fmtG(gioTruc)} / ${fmtG(targetGio)}\` giờ\n`;
         if (form !== 'v1') desc += `  *(T2: ${wt[0]} | T3: ${wt[1]} | T4: ${wt[2]} | T5: ${wt[3]} | T6: ${wt[4]} | T7: ${wt[5]} | CN: ${wt[6]})*\n`;
-        desc += `• Số ngày trực :   \`${ngayTruc} / ${fmtG(targetNgay)}\` ngày\n`;
-        desc += `• Vụ án MDT :   \`${kNum} / ${targetVu}\` vụ\n`;
+        desc += `• Ngày trực: \`${ngayTruc} / ${fmtG(targetNgay)}\` ngày\n`;
+        desc += `• Vụ án MDT: \`${kNum} / ${targetVu}\` vụ\n`;
         if (form === 'v3') {
           const n = (i) => toInt(at(row, i));
           desc += `  ↳ *Lập MDT: ${n(6)} - Hỗ trợ: ${n(7)}*\n`;
-          desc += `  ↳ *Chi tiết BLHT: Tổng ${n(10)} (Lập: ${n(11)}, Hỗ trợ: ${n(12)})*\n`;
-          desc += `  ↳ *Chi tiết Mặt đất: Tổng ${n(8) + n(9)} (Lập: ${n(8)}, Hỗ trợ: ${n(9)})*\n`;
+          desc += `  ↳ *BLHT: ${n(10)} (Lập: ${n(11)}, Hỗ trợ: ${n(12)})*\n`;
+          desc += `  ↳ *Mặt đất: ${n(8) + n(9)} (Lập: ${n(8)}, Hỗ trợ: ${n(9)})*\n`;
         } else if (newFmt) {
           desc += `  ↳ *BLHT: ${blhtTong} (Lập: ${blhtLap}, Hỗ trợ: ${blhtHtro})*\n`;
           desc += `  ↳ *Mặt đất: ${mdtMatDat}*\n`;
         }
         desc += '\n';
-        desc += '💰 ** LƯƠNG THƯỞNG **\n';
+        desc += '💰 **Lương thưởng**\n';
         if (form === 'v3') {
           const m = (i) => fmtMoney(moneyNum(row, i));
-          desc += `• Chuyên cần : \`${m(23)}\`\n`;
-          desc += `• Thưởng OT : \`${m(22)}\`\n`;
-          desc += `• Trách nhiệm + Phụ cấp : \`${fmtMoney(moneyNum(row, 24) + moneyNum(row, 27))}\`\n`;
-          desc += `• Thưởng KPI : \`${m(25)}\`\n`;
-          if (moneyNum(row, 26)) desc += `• Thưởng FTO : \`${m(26)}\`\n`;
-          desc += `• Thưởng MDT BLHT : \`${m(28)}\`\n`;
-          desc += `• Bồi Thường BLHT : \`${m(29)}\`\n`;
-          desc += `• Bổ sung : \`${m(30)}\`\n`;
+          desc += `• Chuyên cần: \`${m(23)}\`\n`;
+          desc += `• Thưởng OT: \`${m(22)}\`\n`;
+          desc += `• Trách nhiệm + Phụ cấp: \`${fmtMoney(moneyNum(row, 24) + moneyNum(row, 27))}\`\n`;
+          desc += `• Thưởng KPI: \`${m(25)}\`\n`;
+          if (moneyNum(row, 26)) desc += `• Thưởng FTO: \`${m(26)}\`\n`;
+          desc += `• Thưởng MDT BLHT: \`${m(28)}\`\n`;
+          desc += `• Bồi thường BLHT: \`${m(29)}\`\n`;
+          desc += `• Bổ sung: \`${m(30)}\`\n`;
           desc += '────────────────────\n';
-          desc += `💵 **TỔNG NHẬN (${w.sheetName}) : ${m(31)}**\n`;
-          desc += `📆 **Thưởng tuần trước (${prevDisplay}): ${thuongTuanTruoc}**\n\n`;
+          desc += `💵 Tổng nhận (${w.sheetName}): **${m(31)}**\n`;
+          desc += `📆 Thưởng tuần trước (${prevDisplay}): **${thuongTuanTruoc}**\n\n`;
         } else {
-          desc += `• Chuyên cần + Trách nhiệm + KPI :  \`${thuongKpi}\`\n`;
-          desc += `• Thưởng 113 :     \`${thuong113}\`\n`;
-          desc += `• Thưởng Đội Bay :     \`${thuongBay}\`\n`;
-          desc += `• Bổ sung :        \`${thuongBoSung}\`\n`;
+          desc += `• Chuyên cần + Trách nhiệm + KPI: \`${thuongKpi}\`\n`;
+          desc += `• Thưởng 113: \`${thuong113}\`\n`;
+          desc += `• Thưởng Đội Bay: \`${thuongBay}\`\n`;
+          desc += `• Bổ sung: \`${thuongBoSung}\`\n`;
           desc += '────────────────────\n';
-          desc += `💵 **TỔNG NHẬN (${w.sheetName}) : ${thuongTong}**\n`;
-          desc += `📆 **Lương tuần trước (${prevDisplay}): ${thuongTuanTruoc}**\n\n`;
+          desc += `💵 Tổng nhận (${w.sheetName}): **${thuongTong}**\n`;
+          desc += `📆 Lương tuần trước (${prevDisplay}): **${thuongTuanTruoc}**\n\n`;
         }
 
         const embed = new EmbedBuilder()
-          .setTitle(`📊 BÁO CÁO TUẦN : ${w.sheetName}` + (searchKey === 'MOMO' ? ' (TRA CỨU)' : ''))
+          .setTitle(`📊 KPI tuần ${w.sheetName}` + (searchKey === 'MOMO' ? ' (tra cứu)' : ''))
           .setColor(COLORS.blurple)
           .setDescription(desc)
           .setFooter({ text: 'MDT Database • GCPD' });
@@ -358,8 +358,8 @@ export default class KPI extends Cog {
         return ctx.reply({ embeds: [embed] });
       }
 
-      if (searchKey === 'CALLSIGN') await ctx.reply(`❌ Không thấy Sĩ quan \`${searchValue}\` trong tuần \`${w.sheetName}\`.`);
-      else await ctx.reply(`❌ Không thấy Momo \`${searchValue}\` trong tuần \`${w.sheetName}\`.`);
+      if (searchKey === 'CALLSIGN') await ctx.reply(`📭 Không tìm thấy callsign **${searchValue}** trong tuần **${w.sheetName}**.`);
+      else await ctx.reply(`📭 Không tìm thấy momo **${searchValue}** trong tuần **${w.sheetName}**.`);
     } catch (e) {
       await ctx.reply(`❌ Lỗi: ${e.message}`);
     }
@@ -370,11 +370,11 @@ export default class KPI extends Cog {
   // ==========================================
   async lamviec(ctx) {
     if (ctx.channel.id !== ROOMS.KPI) return;
-    if (!isBotAdmin(ctx.author)) return ctx.send('❌ KHÔNG CÓ THẨM QUYỀN!');
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
 
     const currSheet = weekSheetName(currentWeekStartVN());
     try {
-      await ctx.send(`⏳ **RADAR TRUY QUÉT SĨ QUAN 0 KPI (${currSheet})...**`);
+      await ctx.send(`⏳ Đang tìm người 0 KPI tuần **${currSheet}**...`);
       const data = await this.fetchKpiData(currSheet);
       const kCol = KPI_COL[kpiFormat(data[0])];
 
@@ -393,8 +393,8 @@ export default class KPI extends Cog {
         }
       }
 
-      if (!slackers.length) await ctx.send('🎉 Tuyệt vời! Không có ai lười biếng!');
-      else await ctx.send(`🚨 **LỆNH ĐIỀU ĐỘNG KHẨN CẤP** 🚨\nNhững Sĩ quan sau 0 KPI: ` + slackers.join(' '));
+      if (!slackers.length) await ctx.send('✅ Không có ai 0 KPI tuần này.');
+      else await ctx.send(`🚨 **0 KPI TUẦN ${currSheet}** (**${slackers.length}** người)\n` + slackers.join(' '));
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }
