@@ -39,20 +39,54 @@ function prettyName(raw) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// "• Criminal: ... • PD: ..." -> các dòng, in đậm nhãn đầu dòng
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const boldLabel = (p) => {
+  const t = /^(\d{1,2}:\d{2}(?:\s*[-–]\s*\d{1,2}:\d{2})?(?:\s*trở đi)?)\s*:?\s*(.+)$/i.exec(p); // mốc giờ "00:00 - 00:59 : ..."
+  if (t) return `**${t[1]}:** ${t[2]}`;
+  const m = /^([^:]{1,32}?):\s*(.+)$/.exec(p);
+  return m ? `**${cap(m[1])}:** ${m[2]}` : cap(p);
+};
+const sideIcon = (p) => (/^(criminal|crim|tội phạm)\b/i.test(p) ? '🔴' : /^(police|pd|gcpd)\b/i.test(p) ? '🔵' : '');
+
+// Ô chi tiết có 2 kiểu:
+//  - nhiều dòng (xuống dòng trong ô): dòng "- ..." là ý con, dòng ngắn không có "-" là tiêu đề nhóm
+//  - một dòng "• ý 1 • ý 2" (kiểu cũ)
 function formatDetail(raw) {
-  const parts = S(raw)
-    .split('•')
-    .map((p) => p.trim().replace(/\s+/g, ' '))
-    .filter(Boolean);
-  return parts
-    .map((p) => {
-      const icon = /^criminal\b/i.test(p) ? '🔴' : /^p[dD]\b|^GCPD\b/.test(p) ? '🔵' : '▸';
-      const m = /^([^:]{1,32}?):\s*(.+)$/.exec(p);
-      const body = m ? `**${m[1].charAt(0).toUpperCase() + m[1].slice(1)}:** ${m[2]}` : p.charAt(0).toUpperCase() + p.slice(1);
-      return `${icon} ${body}`;
-    })
-    .join('\n');
+  const text = S(raw).replace(/\r/g, '');
+  if (!text.includes('\n')) {
+    return text
+      .split('•')
+      .map((p) => p.trim().replace(/\s+/g, ' '))
+      .filter(Boolean)
+      .map((p) => `${sideIcon(p) || '▸'} ${boldLabel(p)}`)
+      .join('\n');
+  }
+  const out = [];
+  for (const line of text.split('\n')) {
+    const l = line.trim().replace(/[ \t]+/g, ' ');
+    if (!l) continue;
+    const item = /^[-•–+*]\s*(.*)$/.exec(l);
+    const note = /^(lưu ý|chú ý|ghi chú)\s*[:–-]?\s*(.*)$/i.exec(l);
+    if (note) {
+      if (out.length) out.push('');
+      out.push(`⚠️ **Lưu ý:** ${note[2]}`);
+    } else if (item && item[1].length <= 25 && item[1] === item[1].toUpperCase() && /\p{L}/u.test(item[1])) {
+      if (out.length) out.push(''); // "- TIMINGS" -> tiêu đề nhóm
+      out.push(`**${item[1]}**`);
+    } else if (item) {
+      if (item[1]) out.push(`▸ ${boldLabel(item[1])}`);
+    } else if (/^\d{1,2}:\d{2}/.test(l)) {
+      out.push(`▸ ${boldLabel(l)}`);
+    } else if (l.length <= 45 && !/[.!]$/.test(l)) {
+      // tiêu đề nhóm: Criminal / Police / Quy định bắt buộc / Cooldown: 30 phút...
+      if (out.length) out.push('');
+      const icon = sideIcon(l);
+      out.push(`${icon ? icon + ' ' : ''}${/:\s*\S/.test(l) ? boldLabel(l) : `**${cap(l.replace(/:$/, ''))}**`}`);
+    } else {
+      out.push(cap(l));
+    }
+  }
+  return out.join('\n');
 }
 
 const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
@@ -119,7 +153,7 @@ export default class Luat extends Cog {
         .addOptions(
           chunk.map((r) => ({
             label: clip(`${r.no}. ${r.name}`, 100),
-            description: clip(r.detail.replace(/•/g, '').trim(), 100),
+            description: clip(r.detail.replace(/[•\-–]\s/g, ' ').replace(/\s+/g, ' ').trim(), 100),
             value: String(r.no),
           })),
         );
