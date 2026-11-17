@@ -144,9 +144,9 @@ export default class CheckDam extends Cog {
         mem.history ??= [];
       }
       this.radioMemory = data;
-      console.log('💾 [Check Dam] Đã nạp thành công dữ liệu trí nhớ từ Ổ cứng!');
+      console.log('[Dam] Đã nạp dữ liệu đàm đã lưu');
     } catch (e) {
-      console.error('Lỗi đọc file trí nhớ:', e.message);
+      console.error('[Dam] LỖI đọc file lưu:', e.message);
     }
   }
 
@@ -154,7 +154,7 @@ export default class CheckDam extends Cog {
     try {
       fs.writeFileSync(MEMORY_FILE, JSON.stringify(this.radioMemory, null, 4), 'utf8');
     } catch (e) {
-      console.error('Lỗi lưu file trí nhớ:', e.message);
+      console.error('[Dam] LỖI ghi file lưu:', e.message);
     }
   }
 
@@ -197,7 +197,7 @@ export default class CheckDam extends Cog {
           delete this.radioMemory[existingCs];
           this.radioMemory[cs].name = name;
           this.radioMemory[cs].role = role;
-          console.log(`🔄 Đã chuyển data 113: ${existingCs} -> ${cs} (Momo: ${momo})`);
+          console.log(`[Dam] Đổi callsign dữ liệu 113: ${existingCs} -> ${cs} (momo ${momo})`);
         }
 
         if (!(cs in this.radioMemory)) this.radioMemory[cs] = newMem(momo, name, role);
@@ -234,7 +234,7 @@ export default class CheckDam extends Cog {
       if (toClear.length) await this.bot.sheets.online.updateCells(toClear);
       this.saveMemory();
     } catch (e) {
-      console.error('Lỗi Sync:', e.message);
+      console.error('[Dam] LỖI đồng bộ Online:', e.message);
     }
   }
 
@@ -282,10 +282,10 @@ export default class CheckDam extends Cog {
 
       if (cells.length) {
         await this.bot.sheets.online.updateCells(cells);
-        console.log(`🧹 [Thợ Săn Bóng Ma] Đã đá văng ${kick} Sĩ quan treo máy/crash game quá 12h.`);
+        console.log(`[Dam] Tự OFF ${kick} người treo duty quá 12h`);
       }
     } catch (e) {
-      console.error('Lỗi Auto Kick 12h:', e.message);
+      console.error('[Dam] LỖI tự OFF 12h:', e.message);
     }
   }
 
@@ -507,7 +507,7 @@ export default class CheckDam extends Cog {
         this.lastAutoRadioMsgIds.push(extra.id);
       }
     } catch (e) {
-      console.error('Lỗi auto_radio:', e.message);
+      console.error('[Dam] LỖI báo cáo kênh đàm:', e.message);
     }
   }
 
@@ -628,7 +628,7 @@ export default class CheckDam extends Cog {
       }
       this.saveMemory();
     } catch (e) {
-      console.error('Lỗi Tổng Kết Cuối Ngày:', e.message);
+      console.error('[Dam] LỖI tổng kết cuối ngày:', e.message);
     }
   }
 
@@ -715,7 +715,7 @@ export default class CheckDam extends Cog {
         this.overload = { momos: [], minutes: 0 };
       }
     } catch (e) {
-      console.error('Lỗi eye_113:', e.message);
+      console.error('[Dam] LỖI theo dõi đàm 113:', e.message);
     }
   }
 }

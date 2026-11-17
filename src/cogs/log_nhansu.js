@@ -34,10 +34,10 @@ export default class LogNhanSu extends Cog {
     try {
       const data = JSON.parse(fs.readFileSync(MEMORY_FILE, 'utf8'));
       for (const mem of Object.values(data)) if (mem.time) mem.time = new Date(mem.time);
-      console.log('💾 [Nhân Sự] Đã nạp trí nhớ Đàm từ Ổ cứng thành công!');
+      console.log('[NhanSu] Đã nạp trạng thái đàm đã lưu');
       return data;
     } catch (e) {
-      console.error('Lỗi đọc file trí nhớ Nhân Sự:', e.message);
+      console.error('[NhanSu] LỖI đọc file lưu:', e.message);
       return {};
     }
   }
@@ -177,7 +177,7 @@ export default class LogNhanSu extends Cog {
     try {
       await this.applyToSheet(latestDuty, latestRadio, newOfficers);
     } catch (e) {
-      console.error('❌ Lỗi Bus Nhân Sự:', e.message);
+      console.error('[NhanSu] LỖI ghi Duty/Radio vào Online:', e.message);
     }
   }
 
@@ -250,7 +250,7 @@ export default class LogNhanSu extends Cog {
       if (!latestDuty.size && !latestRadio.size) return;
       await this.applyToSheet(latestDuty, latestRadio, newOfficers);
     } catch (e) {
-      console.error('Lỗi Radar Kép:', e.message);
+      console.error('[NhanSu] LỖI quét lại Duty/Radio 5 phút:', e.message);
     }
   }
 

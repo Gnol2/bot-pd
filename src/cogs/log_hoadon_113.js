@@ -22,9 +22,9 @@ export default class LogHoaDon113 extends Cog {
     const batch = this.queue.splice(0, 20);
     try {
       await this.bot.sheets.data.appendRows(batch);
-      console.log(`🚀 [Bus HoaDon 113] Đã chở sỉ ${batch.length} Hóa đơn VPGT/KTHC lên Sheet an toàn!`);
+      console.log(`[HoaDon113] Ghi ${batch.length} hóa đơn VPGT/KTHC vào sheet`);
     } catch (e) {
-      console.error('❌ Lỗi chuyến xe buýt Hóa Đơn 113:', e.message);
+      console.error('[HoaDon113] LỖI ghi sheet:', e.message);
     }
   }
 
@@ -37,10 +37,10 @@ export default class LogHoaDon113 extends Cog {
       if (rd) {
         const row = sanitizeRow(rd);
         this.queue.push(row);
-        console.log(`📥 Đã gom Hóa đơn 113 [${row[1]}]: $${row[6]}`);
+        console.log(`[HoaDon113] Nhận hóa đơn ${row[1]}: $${row[6]}`);
       }
     } catch (e) {
-      console.error('❌ Lỗi xử lý tin nhắn Hóa Đơn 113:', e.message);
+      console.error('[HoaDon113] LỖI đọc tin nhắn:', e.message);
     }
   }
 

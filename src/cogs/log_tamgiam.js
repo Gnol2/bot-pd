@@ -40,7 +40,7 @@ export default class LogTamGiam extends Cog {
         }
       }
     } catch (e) {
-      console.error('Lỗi ghi nhận Tạm Giam:', e.message);
+      console.error('[TamGiam] LỖI ghi sheet:', e.message);
     }
   }
 }

@@ -33,7 +33,7 @@ export default class LogHandcuff extends Cog {
         this.cacheOnline = await this.bot.sheets.online.getAllValues();
         this.lastCacheUpdate = Date.now();
       } catch (e) {
-        console.error('Lỗi làm mới Cache:', e.message);
+        console.error('[CongTay] LỖI tải lại Online:', e.message);
       }
     }
     return this.cacheOnline;
@@ -98,7 +98,7 @@ export default class LogHandcuff extends Cog {
         }
       }
     } catch (e) {
-      console.error('Lỗi Handcuff Check:', e.message);
+      console.error('[CongTay] LỖI kiểm tra còng tay:', e.message);
     }
   }
 

@@ -63,7 +63,7 @@ export default class Luat extends Cog {
     this.rules = [];
     this.loadedAt = 0;
     this.commands = { luat: (ctx, ...a) => this.cmdLuat(ctx, a) };
-    this.onInteraction = (i) => this.handleInteraction(i).catch((e) => console.error('❌ [luat.interaction]', e));
+    this.onInteraction = (i) => this.handleInteraction(i).catch((e) => console.error('[Luat] LỖI xử lý menu:', e));
     bot.on(Events.InteractionCreate, this.onInteraction);
   }
 

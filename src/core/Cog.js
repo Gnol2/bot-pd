@@ -34,7 +34,7 @@ export class Cog {
         try {
           await fn();
         } catch (e) {
-          console.error(`❌ [${label}]`, e);
+          console.error(`[${label}] LỖI vòng lặp:`, e);
         }
         if (this._stopped) break;
         await this.sleep(intervalMs - (Date.now() - started));
@@ -55,7 +55,7 @@ export class Cog {
         try {
           await fn();
         } catch (e) {
-          console.error(`❌ [${label}]`, e);
+          console.error(`[${label}] LỖI vòng lặp:`, e);
         }
       }
     })();

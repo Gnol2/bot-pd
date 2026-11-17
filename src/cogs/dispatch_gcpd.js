@@ -41,10 +41,10 @@ export default class DispatchGCPD extends Cog {
           body: JSON.stringify(payload),
           signal: AbortSignal.timeout(5000),
         });
-        if (res.ok) console.log(`[Firebase] 🚀 Đã đẩy Dispatch: ${code} - ${timestamp}`);
-        else console.error(`[Firebase] ❌ Lỗi đẩy dữ liệu, HTTP code: ${res.status}`);
+        if (res.ok) console.log(`[Firebase] Gửi Dispatch ${code} (${timestamp})`);
+        else console.error(`[Firebase] LỖI gửi Dispatch: HTTP ${res.status}`);
       } catch (e) {
-        console.error(`[Firebase] ❌ Lỗi kết nối: ${e.message}`);
+        console.error(`[Firebase] LỖI kết nối: ${e.message}`);
       }
     }
   }

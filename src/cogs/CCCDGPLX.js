@@ -51,9 +51,9 @@ export default class CCCDGPLX extends Cog {
 
       try {
         await this.writeLock.run(() => this.sniperAppend(rowData));
-        console.log(`✅ Đã ghi log tự động ${loai} của: ${tenDayDu}`);
+        console.log(`[CCCD-GPLX] Ghi ${loai}: ${tenDayDu}`);
       } catch (e) {
-        console.error('❌ Lỗi ghi log CCCD/GPLX:', e.message);
+        console.error('[CCCD-GPLX] LỖI ghi sheet:', e.message);
       }
     }
   }

@@ -87,7 +87,7 @@ export default class LogIncident extends Cog {
 
       const vpId = alertRoom('VP_SUA_MDT');
       const vp = this.bot.channels.cache.get(vpId);
-      if (!vp) return console.error(`⚠️ Không tìm thấy phòng cảnh báo sửa MDT ID ${vpId}`);
+      if (!vp) return console.error(`[Incident] LỖI: không thấy kênh cảnh báo sửa MDT (${vpId})`);
 
       const guild = vp.guild;
       const violator = this.resolveViolatorMention(guild, nguoiThucHien);
@@ -115,7 +115,7 @@ export default class LogIncident extends Cog {
         allowedMentions: { parse: ['roles', 'users'] },
       });
     } catch (e) {
-      console.error('❌ Lỗi gửi cảnh báo chỉnh sửa MDT trái phép:', e.message);
+      console.error('[Incident] LỖI gửi cảnh báo sửa MDT:', e.message);
     }
   }
 
@@ -140,7 +140,7 @@ export default class LogIncident extends Cog {
 
     // Chốt chặn 1: Người thực hiện phải trùng Tác giả
     if (!this.isAuthorPerformerMatch(tacGiaFull, tacGiaId, nguoiThucHien)) {
-      console.log(`🚫 [Chặn Ghi Đè] Incident #${incId}: Người thực hiện (${nguoiThucHien}) khác Tác giả (${tacGiaFull}).`);
+      console.log(`[Incident] Không ghi đè #${incId}: người sửa ${nguoiThucHien} không phải tác giả ${tacGiaFull}`);
       return { unauthorized: true, incId, ts, nguoiThucHien, tacGiaFull, tieuDe };
     }
 
@@ -297,13 +297,13 @@ export default class LogIncident extends Cog {
         if (maxRow > ws.rowCount) {
           const add = Math.max(200, maxRow - ws.rowCount + 50);
           await ws.addRows(add);
-          console.log(`📈 [Auto Expand] Đã tự động cơi nới thêm ${add} hàng mới vào Sheet Incident!`);
+          console.log(`[Incident] Thêm ${add} dòng trống vào sheet Incident`);
         }
         await ws.updateCells([...cellsMap.values()]);
-        console.log(`🚀 [Bus Station] Đã đồng bộ thành công cụm Incident (${cellsMap.size} ô cập nhật)!`);
+        console.log(`[Incident] Ghi sheet xong: ${cellsMap.size} ô`);
       }
     } catch (e) {
-      console.error(`⚠️ Lỗi chuyến xe buýt Incident (Đang hoàn trả ${batch.length} MDT vào hàng đợi để thử lại):`, e.message);
+      console.error(`[Incident] LỖI ghi sheet, trả ${batch.length} MDT về hàng đợi để thử lại:`, e.message);
       this.queue.push(...batch);
       await this.sleep(5000);
     }
@@ -322,10 +322,10 @@ export default class LogIncident extends Cog {
         }
         parsed.isRealtime = true;
         this.queue.push(parsed);
-        console.log(`📥 Đã đưa Incident #${parsed.incId} vào Hàng Đợi (Queue).`);
+        console.log(`[Incident] Nhận MDT #${parsed.incId}`);
       }
     } catch (e) {
-      console.error('❌ Lỗi quét tin nhắn MDT Incident:', e.message);
+      console.error('[Incident] LỖI đọc tin nhắn MDT:', e.message);
     }
   }
 
@@ -400,7 +400,7 @@ export default class LogIncident extends Cog {
 
   // Mỗi giờ: rà soát 12h qua, nạp bù MDT bị sót hoặc có bản sửa mới
   async autoScan() {
-    console.log('⏳ [Auto Scan] Bắt đầu rà soát MDT Incident bị sót trong 12h qua...');
+    console.log('[Incident] Quét lại MDT 12h qua để bù bản bị sót');
     try {
       const channel = this.bot.channels.cache.get(ROOMS.INCIDENT);
       if (!channel) return;
@@ -426,10 +426,10 @@ export default class LogIncident extends Cog {
         }
       }
 
-      if (missed) console.log(`✅ [Auto Scan] Đã phát hiện và nạp bù ${missed} biên bản Incident vào hàng đợi!`);
-      else console.log('📭 [Auto Scan] Hoàn tất rà soát. Không có MDT nào bị sót!');
+      if (missed) console.log(`[Incident] Quét lại xong: bù ${missed} MDT bị sót`);
+      else console.log('[Incident] Quét lại xong: không có MDT bị sót');
     } catch (e) {
-      console.error('❌ [Auto Scan] Lỗi khi tự động rà soát:', e.message);
+      console.error('[Incident] LỖI quét lại MDT:', e.message);
     }
   }
 }

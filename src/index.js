@@ -4,7 +4,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { SheetsClient } from './sheets.js';
 import { PREFIX, SHEET_IDS, ROOMS, COGS } from './config.js';
-import { hasRole, isBotAdmin, NO_PERM } from './utils.js';
+import { hasRole, isBotAdmin, NO_PERM, fmt, nowVN } from './utils.js';
+
+// Mọi dòng log có mốc giờ VN: "17/11 21:05:09 [Module] ..."
+for (const k of ['log', 'warn', 'error']) {
+  const orig = console[k].bind(console);
+  console[k] = (...a) => orig(fmt(nowVN(), 'DD/MM HH:mm:ss'), ...a);
+}
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +19,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ==========================================
 const credsStr = process.env.GOOGLE_CREDENTIALS;
 if (!credsStr) {
-  console.error('Thiếu biến môi trường GOOGLE_CREDENTIALS');
+  console.error('[Bot] LỖI: thiếu GOOGLE_CREDENTIALS trong .env');
   process.exit(1);
 }
 const gs = new SheetsClient(JSON.parse(credsStr));
@@ -124,10 +130,10 @@ bot.once(Events.ClientReady, async (c) => {
     try {
       await guild.members.fetch();
     } catch (e) {
-      console.error(`Không tải được danh sách thành viên ${guild.name}:`, e.message);
+      console.error(`[Bot] LỖI tải thành viên server ${guild.name}:`, e.message);
     }
   }
-  console.log(`Bot ${c.user.tag} đã sẵn sàng phục vụ GCPD bằng hệ thống Module độc lập!`);
+  console.log(`[Bot] Online: ${c.user.tag} (${c.guilds.cache.size} server, ${cogs.size} module)`);
   resolveReady();
 });
 
@@ -135,7 +141,7 @@ bot.on(Events.MessageCreate, async (message) => {
   // Listener của các module chạy song song (giống @commands.Cog.listener)
   for (const [name, cog] of cogs) {
     if (typeof cog.onMessage === 'function') {
-      cog.onMessage(message).catch((e) => console.error(`❌ [${name}.onMessage]`, e));
+      cog.onMessage(message).catch((e) => console.error(`[${name}] LỖI xử lý tin nhắn:`, e));
     }
   }
 
@@ -160,26 +166,26 @@ bot.on(Events.MessageCreate, async (message) => {
   try {
     await handler(ctx, ...args);
   } catch (e) {
-    console.error(`❌ Lỗi lệnh !${name}:`, e);
+    console.error(`[Lệnh] LỖI !${name}:`, e);
   }
 });
 
-process.on('unhandledRejection', (e) => console.error('unhandledRejection:', e));
+process.on('unhandledRejection', (e) => console.error('[Bot] LỖI chưa bắt (unhandledRejection):', e));
 
 async function main() {
   await openSheets();
   for (const name of COGS) {
     try {
       await loadCog(name);
-      console.log(`✅ Đã load module: cogs.${name}`);
+      console.log(`[Module] Bật ${name}`);
     } catch (e) {
-      console.error(`❌ Lỗi load cogs.${name}:`, e);
+      console.error(`[Module] LỖI bật ${name}:`, e);
     }
   }
   await bot.login(process.env.DISCORD_TOKEN);
 }
 
 main().catch((e) => {
-  console.error('Lỗi khởi động bot:', e);
+  console.error('[Bot] LỖI khởi động:', e);
   process.exit(1);
 });

@@ -216,13 +216,13 @@ export default class CheckerBLHT extends Cog {
           });
           cells.push(cell(actualRow, 15, 'Đã Check'));
         } catch (e) {
-          console.error('Lỗi không gửi được cảnh báo BLHT:', e.message);
+          console.error('[KiemTraBLHT] LỖI gửi cảnh báo:', e.message);
         }
       }
 
       if (cells.length) await this.bot.sheets.incident.updateCells(cells);
     } catch (e) {
-      console.error('Lỗi vòng lặp Checker BLHT:', e.message);
+      console.error('[KiemTraBLHT] LỖI chu kỳ kiểm tra:', e.message);
     }
   }
 }

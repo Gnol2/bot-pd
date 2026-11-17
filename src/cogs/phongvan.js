@@ -28,7 +28,7 @@ export default class PhongVan extends Cog {
 
       if (current > this.lastRowCount) {
         const channel = this.bot.channels.cache.get(ROOMS.PHONGVAN);
-        if (!channel) return console.error('❌ [PhongVan] Không tìm thấy kênh gửi hồ sơ ứng tuyển!');
+        if (!channel) return console.error('[PhongVan] LỖI: không thấy kênh nhận hồ sơ');
 
         const headers = allRows[0];
         const mentions = ['FTO', 'Sở Trưởng Cảnh Sát', 'Sở Phó Cảnh Sát']
@@ -65,7 +65,7 @@ export default class PhongVan extends Cog {
         this.lastRowCount = current;
       }
     } catch (e) {
-      console.error('❌ [PhongVan] Lỗi Radar quét form ứng tuyển:', e.message);
+      console.error('[PhongVan] LỖI đọc form ứng tuyển:', e.message);
     }
   }
 }

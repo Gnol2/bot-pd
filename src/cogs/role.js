@@ -107,9 +107,9 @@ export default class Role extends Cog {
 
       if (cells.length) await sheet.updateCells(cells);
       if (appends.length) await sheet.appendRows(appends);
-      console.log(`🚀 [Bus Role] Xử lý thành công! Cập nhật ô: ${cells.length} | Tạo mới: ${appends.length} dòng.`);
+      console.log(`[ChucVu] Ghi sheet xong: sửa ${cells.length} ô, thêm ${appends.length} dòng`);
     } catch (e) {
-      console.error('❌ Lỗi chuyến xe buýt Role:', e.message);
+      console.error('[ChucVu] LỖI ghi sheet:', e.message);
     }
   }
 
@@ -120,10 +120,10 @@ export default class Role extends Cog {
       const data = this.parseRoleEmbed(message);
       if (data) {
         this.queue.push(data);
-        console.log(`📥 Đã bắt lệnh đổi chức vụ/Sa thải cho ${data.target_name} (ID: ${data.target_id || 'Offline'}).`);
+        console.log(`[ChucVu] Nhận đổi chức vụ/sa thải: ${data.target_name} (${data.target_id || 'offline'})`);
       }
     } catch (e) {
-      console.error('❌ Lỗi bắt tin nhắn Role:', e.message);
+      console.error('[ChucVu] LỖI đọc tin nhắn:', e.message);
     }
   }
 

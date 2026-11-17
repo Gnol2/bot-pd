@@ -116,7 +116,7 @@ export default class ChamCong extends Cog {
         return { open: m.open ?? {}, lastId: m.lastId ?? null, lastTime: m.lastTime ?? null, pending: m.pending ?? [] };
       }
     } catch (e) {
-      console.error('❌ [ChamCong] Lỗi đọc JSON:', e.message);
+      console.error('[ChamCong] LỖI đọc file tạm:', e.message);
     }
     return { open: {}, lastId: null, lastTime: null, pending: [] };
   }
@@ -125,7 +125,7 @@ export default class ChamCong extends Cog {
     try {
       fs.writeFileSync(MEMORY_FILE, JSON.stringify(this.mem, null, 2), 'utf8');
     } catch (e) {
-      console.error('❌ [ChamCong] Lỗi ghi JSON:', e.message);
+      console.error('[ChamCong] LỖI ghi file tạm:', e.message);
     }
   }
 
@@ -147,7 +147,7 @@ export default class ChamCong extends Cog {
     if (this.ready) return; // loop 24h chỉ cần lần đầu
     const ch = this.bot.channels.cache.get(ROOMS.DUTY);
     if (!ch) {
-      console.error('❌ [ChamCong] Không thấy kênh Duty');
+      console.error('[ChamCong] LỖI: không thấy kênh Duty');
       this.ready = true;
       return;
     }
@@ -162,9 +162,9 @@ export default class ChamCong extends Cog {
           n++;
         }
       } catch (e) {
-        console.error('❌ [ChamCong] Lỗi quét bù:', e.message);
+        console.error('[ChamCong] LỖI quét bù:', e.message);
       }
-      console.log(`🕒 [ChamCong] ${firstRun ? 'Khởi tạo' : 'Quét bù'} ${n} tin Duty; đang mở ${Object.keys(this.mem.open).length} phiên ON.`);
+      console.log(`[ChamCong] ${firstRun ? 'Khởi tạo' : 'Quét bù'}: ${n} tin Duty, ${Object.keys(this.mem.open).length} người đang ON`);
     });
     this.ready = true;
     for (const m of this.pendingLive.splice(0)) await this.withLock(() => this.handle(m));
@@ -182,7 +182,7 @@ export default class ChamCong extends Cog {
         if (!open || t - open.t > STALE_ON_MS) this.mem.open[d.momo] = { t, cs: d.cs, name: d.name };
       } else if (open) {
         if (t - open.t > STALE_ON_MS) {
-          console.warn(`⚠️ [ChamCong] Bỏ phiên bất thường của ${d.momo} (${Math.round((t - open.t) / HOUR_MS)}h)`);
+          console.warn(`[ChamCong] Bỏ phiên ON quá dài của ${d.momo} (${Math.round((t - open.t) / HOUR_MS)}h)`);
         } else if (write) {
           await this.writeSession(d.momo, toVN(open.t), toVN(t)); // ghi lỗi -> tự chuyển vào hàng chờ, không mất
         }
@@ -213,7 +213,7 @@ export default class ChamCong extends Cog {
         this.mem.pending.push({ momo, mon: mon.getTime(), segs: ws.map((s) => ({ day: s.day.getTime(), text: s.text })) });
         this.saveMemory();
         const why = e.code === TAB_MISSING ? e.message : `Lỗi ghi sheet: ${e.message}`;
-        console.warn(`⏸️ [ChamCong] ${why} -> giữ phiên của ${momo} (${ws.map((s) => s.text).join(', ')}) để ghi lại sau.`);
+        console.warn(`[ChamCong] Chưa ghi được ${momo} (${ws.map((s) => s.text).join(', ')}): ${why} — giữ lại để thử sau`);
       }
     }
   }
@@ -228,7 +228,7 @@ export default class ChamCong extends Cog {
         for (let i = FIRST_ROW - 1; i < rows.length; i++) if (S(rows[i][MOMO_COL - 1])) r = i + 1;
         await tab.ensureSize(r + 1, DAY_COL0 + 6);
         await tab.updateCells([{ row: r + 1, col: MOMO_COL, value: momo }], 'RAW');
-        console.log(`➕ [ChamCong] Thêm momo ${momo} vào tab ${tab.title} (dòng ${r + 1})`);
+        console.log(`[ChamCong] Thêm momo ${momo} vào tab ${tab.title}, dòng ${r + 1}`);
       }
       const cells = [];
       for (let wd = 0; wd < 7; wd++) {
@@ -239,7 +239,7 @@ export default class ChamCong extends Cog {
         cells.push({ row: r + 1, col, value: [old, ...parts].filter(Boolean).join(', ') });
       }
       await tab.updateCells(cells, 'RAW');
-      console.log(`🕒 [ChamCong] ${momo}: ${ws.map((s) => `${fmt(s.day, 'DD/MM')} ${s.text}`).join(' | ')} -> ${tab.title}`);
+      console.log(`[ChamCong] Ghi giờ ${momo} vào ${tab.title}: ${ws.map((s) => `${fmt(s.day, 'DD/MM')} ${s.text}`).join(' | ')}`);
   }
 
   // Tab tuần (tạo tay trong file Lương). Chưa có -> báo lỗi TAB_MISSING
@@ -266,11 +266,11 @@ export default class ChamCong extends Cog {
         try {
           await this.writeWeek(p.momo, new Date(p.mon), p.segs.map((s) => ({ day: new Date(s.day), text: s.text })));
         } catch (e) {
-          if (e.code !== TAB_MISSING) console.error(`❌ [ChamCong] Lỗi ghi phiên chờ ${p.momo}:`, e.message);
+          if (e.code !== TAB_MISSING) console.error(`[ChamCong] LỖI ghi phiên chờ ${p.momo}:`, e.message);
           left.push(p);
         }
       }
-      if (left.length !== this.mem.pending.length) console.log(`✅ [ChamCong] Đã ghi ${this.mem.pending.length - left.length} phiên chờ; còn ${left.length}.`);
+      if (left.length !== this.mem.pending.length) console.log(`[ChamCong] Ghi bù ${this.mem.pending.length - left.length} phiên chờ, còn ${left.length}`);
       this.mem.pending = left;
       this.saveMemory();
     });
@@ -447,7 +447,7 @@ export default class ChamCong extends Cog {
       }
       if (removed.length) {
         this.saveMemory();
-        console.log(`🗑️ [ChamCong] ${callsignOf(ctx.author.displayName)} xoá khỏi danh sách ON: ${removed.join('; ')}`);
+        console.log(`[ChamCong] ${callsignOf(ctx.author.displayName)} dùng !leave xoá: ${removed.join('; ')}`);
       }
       let msg = removed.length ? `✅ Đã xoá **${removed.length}** người khỏi danh sách ON (không ghi giờ):\n• ${removed.join('\n• ')}` : '';
       if (notFound.length) msg += `${msg ? '\nKhông' : '📭 Không'} có trong danh sách ON: ${notFound.map((k) => `\`${k}\``).join(', ')}`;

@@ -16,9 +16,9 @@ export default class HoaDon extends Cog {
     const batch = this.queue.splice(0, 20);
     try {
       await this.bot.sheets.hoadon.appendRows(batch);
-      console.log(`🚀 [Bus HoaDon] Đã chở sỉ ${batch.length} Hóa đơn [CHƯA THANH TOÁN] lên Sheet an toàn!`);
+      console.log(`[HoaDon] Ghi ${batch.length} hóa đơn chưa thanh toán vào sheet`);
     } catch (e) {
-      console.error('❌ Lỗi chuyến xe buýt Hóa Đơn Cảnh Sát:', e.message);
+      console.error('[HoaDon] LỖI ghi sheet:', e.message);
     }
   }
 
@@ -30,10 +30,10 @@ export default class HoaDon extends Cog {
       const row = parseBillEmbed(message);
       if (row) {
         this.queue.push(row);
-        console.log(`📥 Đã gom Hóa đơn [CHƯA THANH TOÁN] của ${row[3]} vào Hàng Đợi GCPD.`);
+        console.log(`[HoaDon] Nhận hóa đơn chưa thanh toán: ${row[3]}`);
       }
     } catch (e) {
-      console.error('❌ Lỗi xử lý tin nhắn Hóa Đơn GCPD:', e.message);
+      console.error('[HoaDon] LỖI đọc tin nhắn:', e.message);
     }
   }
 

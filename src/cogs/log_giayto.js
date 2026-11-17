@@ -48,7 +48,7 @@ export default class LogGiayTo extends Cog {
         });
       }
     } catch (e) {
-      console.error('Lỗi ghi nhận Property Deed:', e.message);
+      console.error('[GiayTo] LỖI ghi Property Deed:', e.message);
     }
   }
 }

@@ -80,10 +80,10 @@ export default class CheckGiayTo extends Cog {
 
       if (cells.length) {
         await this.bot.sheets.cccdgplx.updateCells(cells);
-        console.log(`🔄 [ĐỒNG BỘ GIẤY TỜ] Đã xử lý và chuyển ${cells.length} mệnh giá tiền sang CCCDGPLX (Bao gồm Combo).`);
+        console.log(`[GiayTo] Chuyển ${cells.length} ô phí giấy tờ (gồm combo) sang CCCDGPLX`);
       }
     } catch (e) {
-      console.error('❌ Lỗi vòng lặp Check Giấy Tờ:', e.message);
+      console.error('[GiayTo] LỖI chu kỳ kiểm tra:', e.message);
     }
   }
 }

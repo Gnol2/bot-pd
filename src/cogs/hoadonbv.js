@@ -23,9 +23,9 @@ export default class HoaDonBV extends Cog {
     try {
       const sheet = await this.getSheet();
       await sheet.appendRows(batch);
-      console.log(`🚀 [Bus HoaDon-BV] Đã chở sỉ ${batch.length} Hóa đơn [CHƯA THANH TOÁN] lên Sheet an toàn!`);
+      console.log(`[HoaDonBV] Ghi ${batch.length} hóa đơn chưa thanh toán vào sheet`);
     } catch (e) {
-      console.error('❌ Lỗi chuyến xe buýt Hóa Đơn BV:', e.message);
+      console.error('[HoaDonBV] LỖI ghi sheet:', e.message);
     }
   }
 
@@ -37,10 +37,10 @@ export default class HoaDonBV extends Cog {
       const row = parseBillEmbed(message);
       if (row) {
         this.queue.push(row);
-        console.log(`📥 Đã gom Hóa đơn [CHƯA THANH TOÁN] của ${row[3]} vào Hàng Đợi.`);
+        console.log(`[HoaDonBV] Nhận hóa đơn chưa thanh toán: ${row[3]}`);
       }
     } catch (e) {
-      console.error('❌ Lỗi xử lý tin nhắn Hóa Đơn BV:', e.message);
+      console.error('[HoaDonBV] LỖI đọc tin nhắn:', e.message);
     }
   }
 

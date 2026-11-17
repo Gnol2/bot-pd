@@ -40,7 +40,7 @@ export default class CheckerGPLMBBill extends Cog {
       try {
         roleRows = await this.bot.sheets.role.getAllValues();
       } catch (e) {
-        console.error('Lỗi kéo GCPD HOME trong check_gplmb_bill:', e.message);
+        console.error('[KiemTraGPLMB] LỖI đọc GCPD HOME:', e.message);
       }
 
       const momoDict = new Map();
@@ -124,7 +124,7 @@ export default class CheckerGPLMBBill extends Cog {
 
       if (cells.length) await this.bot.sheets.giayTo.updateCells(cells);
     } catch (e) {
-      console.error('Lỗi vòng lặp Checker GPLMB Bill:', e.message);
+      console.error('[KiemTraGPLMB] LỖI chu kỳ kiểm tra:', e.message);
     }
   }
 }

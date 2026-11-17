@@ -90,7 +90,7 @@ export default class GPLMB extends Cog {
       } else {
         msg = `🚨 **NHẮC TỊCH THU GPLMB**\n${pingStr}\nĐã quá 1 phút, chưa có xác nhận \`!yes ${momo}\` / \`!no ${momo}\` cho Momo **${momo}**.`;
       }
-      await channel.send(msg).catch((e) => console.error('Lỗi nhắc tịch thu:', e.message));
+      await channel.send(msg).catch((e) => console.error('[GPLMB] LỖI gửi nhắc tịch thu:', e.message));
     }
   }
 

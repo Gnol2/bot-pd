@@ -53,11 +53,11 @@ export default class LogClockout extends Cog {
         if (foundIdx !== -1) {
           await ws.updateCells([cell(foundIdx, 8, ' '), cell(foundIdx, 9, ' ')]);
           const tenTrongSheet = String(allRows[foundIdx - 1][3]).trim();
-          console.log(`🚨 [CLOCK-OUT] Đã dọn dẹp (Xóa H & I) cho Sĩ quan: Discord '${rawName.trim()}' <-> Sheet '${tenTrongSheet}'`);
+          console.log(`[ClockOut] Xoá Duty/Radio (H, I) của ${tenTrongSheet} (Discord: ${rawName.trim()})`);
         }
       }
     } catch (e) {
-      console.error('Lỗi chấm công Clockout:', e.message);
+      console.error('[ClockOut] LỖI:', e.message);
     }
   }
 }

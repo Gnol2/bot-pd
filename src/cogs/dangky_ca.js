@@ -114,10 +114,10 @@ export default class DangKyCa extends Cog {
           const dm =
             `⚠️ **Ca ${ca}** \`${caLabel(ca)}\` ngày **${key}** đã bắt đầu **${minIntoCa}** phút, bạn chưa onduty.\n` +
             'Vào ca hoặc báo quản lý nếu không trực được.';
-          await user?.send(dm).catch((e) => console.error(`❌ [NhacCa] Không DM được ${r.cs}:`, e.message));
+          await user?.send(dm).catch((e) => console.error(`[DangKyCa] LỖI nhắn riêng ${r.cs}:`, e.message));
         }
       }
-      console.log(`⏰ [NhacCa] Ca ${ca} ${key}: nhắc ${absent.length} người chưa onduty.`);
+      console.log(`[DangKyCa] Ca ${ca} ngày ${key}: nhắc ${absent.length} người chưa onduty`);
     }
 
     // Đánh dấu đã xử lý cả người vắng (đã nhắc) lẫn người đã onduty, để không kiểm tra lại

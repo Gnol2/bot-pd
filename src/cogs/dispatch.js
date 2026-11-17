@@ -140,15 +140,15 @@ export default class Dispatch extends Cog {
   }
 
   async autoDaily() {
-    console.log('⏳ [Auto Dispatch] Bắt đầu tự động chốt sổ Dispatch vào Google Sheets lúc 23:59...');
+    console.log('[Dispatch] Bắt đầu ghi tổng kết Dispatch cuối ngày');
     const now = nowVN();
     const channel = this.bot.channels.cache.get(ROOMS.DISPATCH);
-    if (!channel) return console.error('❌ [Auto Dispatch] Không tìm thấy kênh!');
+    if (!channel) return console.error('[Dispatch] LỖI: không thấy kênh Dispatch');
     try {
       const [u, a] = await this.processAndSync(startOfDay(now), endOfDay(now), channel);
-      console.log(`✅ [Auto Dispatch] Chốt sổ thành công! Ghi đè: ${u} ngày | Ghi mới: ${a} ngày.`);
+      console.log(`[Dispatch] Ghi tổng kết xong: cập nhật ${u} ngày, thêm ${a} ngày`);
     } catch (e) {
-      console.error('❌ [Auto Dispatch] Lỗi chốt sổ:', e.message);
+      console.error('[Dispatch] LỖI ghi tổng kết:', e.message);
     }
   }
 

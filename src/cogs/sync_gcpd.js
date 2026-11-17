@@ -129,10 +129,10 @@ export default class SyncGCPD extends Cog {
   }
 
   async dailySync() {
-    console.log(`[${fmt(nowVN(), 'HH:mm:ss')}] Bắt đầu Auto-Sync GCPD HOME...`);
+    console.log('[GCPDHome] Bắt đầu đồng bộ tự động');
     const [ok, msg] = await this.performSync();
-    if (ok) console.log(`✅ Auto-Sync thành công: ${msg}`);
-    else console.error(`❌ Auto-Sync thất bại: ${msg}`);
+    if (ok) console.log(`[GCPDHome] Đồng bộ xong: ${msg}`);
+    else console.error(`[GCPDHome] LỖI đồng bộ: ${msg}`);
   }
 
   async forceSync(ctx) {
