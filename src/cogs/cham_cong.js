@@ -240,6 +240,15 @@ export default class ChamCong extends Cog {
       }
       await tab.updateCells(cells, 'RAW');
       console.log(`[ChamCong] Ghi giờ ${momo} vào ${tab.title}: ${ws.map((s) => `${fmt(s.day, 'DD/MM')} ${s.text}`).join(' | ')}`);
+      this.postLog(momo, cells.map((c) => c.value));
+  }
+
+  // Log kênh điểm danh: nội dung ô ngày sau khi ghi (qua nửa đêm -> 2 dòng Đã ghi)
+  postLog(momo, values) {
+    const ch = ROOMS.DIEM_DANH && this.bot.channels.cache.get(ROOMS.DIEM_DANH);
+    if (!ch || !values.length) return;
+    const text = `✅ **ĐÃ OFF DUTY** (PlayerID: **${momo}**)\n` + values.map((v) => `**Đã ghi:** ${v}`).join('\n');
+    ch.send(text).catch((e) => console.error('[ChamCong] LỖI gửi log điểm danh:', e.message));
   }
 
   // Tab tuần (tạo tay trong file Lương). Chưa có -> báo lỗi TAB_MISSING

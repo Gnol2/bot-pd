@@ -10,7 +10,7 @@ export const SHEET_IDS = {
   MAIN: '1OQNQWjXuZ8wOd926L4WjR2BFabQjZ4x-GAT72E6nOb0', // File chính "GCPD DATA" (Online, Hoa-Don, Incident, tab KPI tuần...)
   HOME: '17khpbSoq5CvPDqJAsBD1oSbveM-O6Z_EgfxIi6Topmo', // GCPD HOME, Dispatch
   PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng
-  LUONG: '1ec1PDrI9V4hlQCWf_1KRApeEpX3FVkJdTftSUClNnqU', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
+  LUONG: '1BaGq__14HqVT8VcSsP2ZGH0kmuQEsIm4TKkNiQCjDHc', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
   LUAT: '1uLpKViLYlzhyBDO7lzoNydiWr77WO3WAkRBypFbVP0I', // "Tội phạm phải đọc" (tab luatpd): Nghề | Chi tiết | Link — dùng cho !luat
 };
 
@@ -38,6 +38,7 @@ export const ROOMS = {
   DISPATCH: '1518939026391040050',
   PHONGVAN: '1571029642377429114',
 
+  DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1571551051318829086', // Kênh dùng lệnh đăng ký ca trực (!dangky, !huyca, !lichtruc...). Để trống '' = dùng ở mọi kênh
 
   // Kênh riêng cho từng loại cảnh báo vi phạm. Để trống '' = gửi vào VI_PHAM như cũ.
