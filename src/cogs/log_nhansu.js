@@ -254,17 +254,17 @@ export default class LogNhanSu extends Cog {
     }
   }
 
-  // Đọc tham số ngày cho !updateduty / !updateradio. Mặc định 24h qua.
+  // Đọc tham số ngày cho /updateduty / /updateradio. Mặc định 24h qua.
   async parseRange(ctx, fromStr, toStr, label, cmd) {
     const now = nowVN();
     if (!fromStr) {
-      await ctx.send(`⏳ Đang quét bù ${label} 24h qua...\nℹ️ Quét theo ngày: \`!${cmd} 01/10/2026 15/10/2026\``);
+      await ctx.send(`⏳ Đang quét bù ${label} 24h qua...\nℹ️ Quét theo ngày: \`/${cmd} 01/10/2026 15/10/2026\``);
       return { from: addMs(now, -24 * HOUR_MS), to: now };
     }
     const from = parseDMY(fromStr);
     const toDay = toStr ? parseDMY(toStr) : now;
     if (!from || !toDay) {
-      await ctx.send(`⚠️ Cú pháp: \`!${cmd} [dd/mm/yyyy] [dd/mm/yyyy]\`\nVí dụ: \`!${cmd} 01/10/2026 15/10/2026\``);
+      await ctx.send(`⚠️ Cú pháp: \`/${cmd} [dd/mm/yyyy] [dd/mm/yyyy]\`\nVí dụ: \`/${cmd} 01/10/2026 15/10/2026\``);
       return null;
     }
     const to = endOfDay(toDay);
@@ -273,7 +273,7 @@ export default class LogNhanSu extends Cog {
   }
 
   // ==========================================
-  // !updateduty [dd/mm/yyyy] [dd/mm/yyyy]
+  // /updateduty [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateDuty(ctx, fromStr, toStr) {
     if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
@@ -319,7 +319,7 @@ export default class LogNhanSu extends Cog {
   }
 
   // ==========================================
-  // !updateradio [dd/mm/yyyy] [dd/mm/yyyy]
+  // /updateradio [dd/mm/yyyy] [dd/mm/yyyy]
   // ==========================================
   async updateRadio(ctx, fromStr, toStr) {
     if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);

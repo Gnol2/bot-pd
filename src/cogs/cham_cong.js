@@ -223,12 +223,9 @@ export default class ChamCong extends Cog {
       const rows = await tab.getAllValues();
       let r = rows.findIndex((row, i) => i >= FIRST_ROW - 1 && S(row[MOMO_COL - 1]) === momo);
       if (r < 0) {
-        // Chưa có trong danh sách -> thêm momo vào dòng trống đầu tiên của cột B (A/C/D tự tra bằng công thức)
-        r = FIRST_ROW - 1;
-        for (let i = FIRST_ROW - 1; i < rows.length; i++) if (S(rows[i][MOMO_COL - 1])) r = i + 1;
-        await tab.ensureSize(r + 1, DAY_COL0 + 6);
-        await tab.updateCells([{ row: r + 1, col: MOMO_COL, value: momo }], 'RAW');
-        console.log(`[ChamCong] Thêm momo ${momo} vào tab ${tab.title}, dòng ${r + 1}`);
+        // Momo không có trong cột B của tab tuần -> bỏ qua, không ghi
+        console.log(`[ChamCong] Bỏ qua ${momo}: không có trong cột momo tab ${tab.title}`);
+        return;
       }
       const cells = [];
       for (let wd = 0; wd < 7; wd++) {
@@ -285,14 +282,14 @@ export default class ChamCong extends Cog {
     });
   }
 
-  // ---------- !updatechamcong [dd/mm/yyyy] : dựng lại giờ trực cả tuần từ lịch sử kênh Duty (quản lý) ----------
+  // ---------- /updatechamcong [dd/mm/yyyy] : dựng lại giờ trực cả tuần từ lịch sử kênh Duty (quản lý) ----------
   // Ghi đè cột E..K của những người có phiên trong tuần; người không có phiên giữ nguyên.
   async cmdRebuild(ctx, dateStr) {
     if (!isBotAdmin(ctx.author)) return ctx.reply(NO_PERM);
     let day = toVN(Date.now());
     if (dateStr) {
       const m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?$/.exec(dateStr);
-      if (!m) return ctx.reply('⚠️ Cú pháp: `!updatechamcong [dd/mm/yyyy]` (bỏ trống = tuần này)');
+      if (!m) return ctx.reply('⚠️ Cú pháp: `/updatechamcong [dd/mm/yyyy]` (bỏ trống = tuần này)');
       day = new Date(Date.UTC(+(m[3] ?? day.getUTCFullYear()), +m[2] - 1, +m[1]));
     }
     const mon = weekStart(day);
@@ -327,32 +324,29 @@ export default class ChamCong extends Cog {
       rows.forEach((r, i) => {
         if (i >= FIRST_ROW - 1 && S(r[MOMO_COL - 1]) && !rowOf.has(S(r[MOMO_COL - 1]))) rowOf.set(S(r[MOMO_COL - 1]), i + 1);
       });
-      let next = Math.max(FIRST_ROW - 1, ...rowOf.values()) + 1;
       const cells = [];
-      const added = [];
+      const skipped = []; // momo không có trong cột B -> không ghi
       for (const [momo, segs] of perMomo) {
-        let r = rowOf.get(momo);
+        const r = rowOf.get(momo);
         if (!r) {
-          r = next++;
-          cells.push({ row: r, col: MOMO_COL, value: momo });
-          added.push(momo);
+          skipped.push(momo);
+          continue;
         }
         for (let wd = 0; wd < 7; wd++) {
           const parts = segs.filter((s) => weekday(s.day) === wd).map((s) => s.text);
           cells.push({ row: r, col: DAY_COL0 + wd, value: parts.join(', ') });
         }
       }
-      await tab.ensureSize(next, DAY_COL0 + 6);
-      await tab.updateCells(cells, 'RAW');
+      if (cells.length) await tab.updateCells(cells, 'RAW');
       return wait.edit(
-        `✅ Đã dựng lại tuần **${weekTabName(mon)}**: **${perMomo.size}** người (đọc **${n}** tin Duty).` +
-          (added.length ? `\nThêm mới: ${added.join(', ')}` : '') +
+        `✅ Đã dựng lại tuần **${weekTabName(mon)}**: **${perMomo.size - skipped.length}** người (đọc **${n}** tin Duty).` +
+          (skipped.length ? `\nBỏ qua (không có trong cột momo): ${skipped.join(', ')}` : '') +
           (Object.keys(open).length ? `\nĐang ON: **${Object.keys(open).length}** người, sẽ ghi khi OFF.` : ''),
       );
     });
   }
 
-  // ---------- !helpchamcong ----------
+  // ---------- /helpchamcong ----------
   async cmdHelp(ctx) {
     const embed = new EmbedBuilder()
       .setTitle('📖 Hướng dẫn chấm công')
@@ -365,12 +359,12 @@ export default class ChamCong extends Cog {
         {
           name: `Lệnh quản lý (role ${BOT_ADMIN_ROLE})`,
           value: [
-            '`!list` (hoặc `!chamcong`) — danh sách đang ON, giờ ON, thời lượng',
-            '`!leave <momo|callsign> [...]` — xoá khỏi danh sách ON, **không ghi giờ**',
-            '  ↳ `!leave 548` · `!leave 15200 35233`',
-            '`!updatechamcong [dd/mm/yyyy]` — dựng lại giờ trực cả tuần từ kênh Duty (ghi đè E:K của người có phiên)',
-            '  ↳ `!updatechamcong` (tuần này) · `!updatechamcong 10/11/2026` (tuần chứa ngày đó)',
-            '`!helpchamcong` — hướng dẫn này',
+            '`/list` (hoặc `/chamcong`) — danh sách đang ON, giờ ON, thời lượng',
+            '`/leave <momo|callsign> [...]` — xoá khỏi danh sách ON, **không ghi giờ**',
+            '  ↳ `/leave 548` · `/leave 15200 35233`',
+            '`/updatechamcong [dd/mm/yyyy]` — dựng lại giờ trực cả tuần từ kênh Duty (ghi đè E:K của người có phiên)',
+            '  ↳ `/updatechamcong` (tuần này) · `/updatechamcong 10/11/2026` (tuần chứa ngày đó)',
+            '`/helpchamcong` — hướng dẫn này',
           ].join('\n'),
         },
         {
@@ -380,7 +374,7 @@ export default class ChamCong extends Cog {
             '• ON lặp lại → giữ giờ ON đầu tiên.',
             `• ON quá ${STALE_ON_MS / HOUR_MS} tiếng mà chưa OFF → coi là mất log, không ghi.`,
             '• Qua nửa đêm: `23:00 - 23:59` hôm nay + `00:00 - 03:00` hôm sau; CN → T2 ở tab tuần sau.',
-            '• Momo chưa có trong tab → tự thêm vào cột B.',
+            '• Momo không có trong cột B của tab → bỏ qua, không ghi.',
           ].join('\n'),
         },
         {
@@ -392,7 +386,7 @@ export default class ChamCong extends Cog {
           ].join('\n'),
         },
       )
-      .setFooter({ text: 'Đăng ký ca trực: gõ !helpca' });
+      .setFooter({ text: 'Đăng ký ca trực: gõ /helpca' });
     return ctx.reply({ embeds: [embed] });
   }
 
@@ -400,7 +394,7 @@ export default class ChamCong extends Cog {
     return isBotAdmin(ctx.author);
   }
 
-  // ---------- !list / !chamcong : toàn bộ người đang ON trong chamcong_memory.json (quản lý) ----------
+  // ---------- /list / /chamcong : toàn bộ người đang ON trong chamcong_memory.json (quản lý) ----------
   async cmdStatus(ctx) {
     if (!this.isAdmin(ctx)) return ctx.reply(NO_PERM);
     const list = Object.entries(this.mem.open).sort((a, b) => a[1].t - b[1].t);
@@ -416,7 +410,7 @@ export default class ChamCong extends Cog {
       const warn = now - o.t > STALE_ON_MS / 2 ? ' ⚠️' : '';
       return `\`${p2(i + 1)}\` **${o.cs || '?'} | ${o.name || '?'}** — Momo \`${momo}\` — ON từ ${fmt(toVN(o.t), 'HH:mm DD/MM')} (${dur})${warn}`;
     });
-    const footer = `${pend}\nXoá (không ghi giờ): \`!leave <momo|callsign>\` · ⚠️ = ON quá ${STALE_ON_MS / HOUR_MS / 2} tiếng`;
+    const footer = `${pend}\nXoá (không ghi giờ): \`/leave <momo|callsign>\` · ⚠️ = ON quá ${STALE_ON_MS / HOUR_MS / 2} tiếng`;
 
     // Chia nhiều tin nếu danh sách dài
     const chunks = [];
@@ -437,11 +431,11 @@ export default class ChamCong extends Cog {
     for (const c of chunks.slice(1)) await ctx.send(c);
   }
 
-  // ---------- !leave <momo|callsign> [...] : xoá PD khỏi danh sách đang ON, KHÔNG ghi giờ vào sheet (quản lý) ----------
+  // ---------- /leave <momo|callsign> [...] : xoá PD khỏi danh sách đang ON, KHÔNG ghi giờ vào sheet (quản lý) ----------
   async cmdLeave(ctx, args) {
     if (!this.isAdmin(ctx)) return ctx.reply(NO_PERM);
     const keys = args.map((a) => S(a)).filter(Boolean);
-    if (!keys.length) return ctx.reply('⚠️ Cú pháp: `!leave <momo|callsign> [momo|callsign ...]`');
+    if (!keys.length) return ctx.reply('⚠️ Cú pháp: `/leave <momo|callsign> [momo|callsign ...]`');
 
     return this.withLock(async () => {
       const removed = [];
@@ -456,7 +450,7 @@ export default class ChamCong extends Cog {
       }
       if (removed.length) {
         this.saveMemory();
-        console.log(`[ChamCong] ${callsignOf(ctx.author.displayName)} dùng !leave xoá: ${removed.join('; ')}`);
+        console.log(`[ChamCong] ${callsignOf(ctx.author.displayName)} dùng /leave xoá: ${removed.join('; ')}`);
       }
       let msg = removed.length ? `✅ Đã xoá **${removed.length}** người khỏi danh sách ON (không ghi giờ):\n• ${removed.join('\n• ')}` : '';
       if (notFound.length) msg += `${msg ? '\nKhông' : '📭 Không'} có trong danh sách ON: ${notFound.map((k) => `\`${k}\``).join(', ')}`;

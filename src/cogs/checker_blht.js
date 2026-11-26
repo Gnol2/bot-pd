@@ -11,7 +11,7 @@ const parseInvoices = (raw) =>
     .filter((d) => /^\d+$/.test(d))
     .map((d) => parseInt(d, 10));
 
-// Mỗi 3 phút: kiểm tra MDT "BLHT" (mức phạt và dấu !vipham), sai thì lập biên bản ở phòng Đội Bay
+// Mỗi 3 phút: kiểm tra MDT "BLHT" (mức phạt và dấu /vipham), sai thì lập biên bản ở phòng Đội Bay
 export default class CheckerBLHT extends Cog {
   constructor(bot) {
     super(bot);
@@ -136,7 +136,8 @@ export default class CheckerBLHT extends Cog {
           for (let k = 0; k < invoices.length; k++) {
             const tien = invoices[k];
             const momoTp = k < targets.length ? targets[k] : targets[targets.length - 1];
-            const re = new RegExp(`!vipham\\s+${escapeRe(momoTp)}`);
+            // "/vipham <momo>" (lệnh cũ) hoặc dòng "`/vipham <momo>`" bot hiện lại khi dùng slash command
+            const re = new RegExp(`[!/]vipham\\s+${escapeRe(momoTp)}`);
             const foundVipham = msgs.some((t) => re.test(t));
 
             let valid = false;
@@ -146,7 +147,7 @@ export default class CheckerBLHT extends Cog {
               if (foundVipham) valid = true;
               else
                 lyDo =
-                  `Không có \`!vipham\` cho **${momoTp}** trong ±15 phút quanh MDT. ` +
+                  `Không có \`/vipham\` cho **${momoTp}** trong ±15 phút quanh MDT. ` +
                   `Hóa đơn **$${money(tien)}** (đã gồm 5% thuế) dưới $22,000 nên bắt buộc đóng dấu.`;
             } else {
               lyDo = `Phạt sai mức: hóa đơn của **${momoTp}** chỉ **$${money(tien)}** (đã gồm 5% thuế), dưới mức tối thiểu $7,000.`;
@@ -199,7 +200,7 @@ export default class CheckerBLHT extends Cog {
             value: (
               `${lyDo}\n\n` +
               'Quy định:\n' +
-              '- Có GPLMB: phạt $7,000 - $10,000 và bắt buộc đóng dấu `!vipham`.\n' +
+              '- Có GPLMB: phạt $7,000 - $10,000 và bắt buộc đóng dấu `/vipham`.\n' +
               '- Không GPLMB: tổng hóa đơn tối thiểu **$22,000**.\n\n' +
               'Yêu cầu những người liên quan giải trình.'
             ).slice(0, 1024),

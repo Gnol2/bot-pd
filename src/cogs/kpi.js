@@ -42,7 +42,7 @@ function parseWeeklyTime(v) {
   return v;
 }
 
-// KPI tuần: !top, !kpi, !lamviec
+// KPI tuần: /top, /kpi, /lamviec
 export default class KPI extends Cog {
   constructor(bot) {
     super(bot);
@@ -84,7 +84,7 @@ export default class KPI extends Cog {
   }
 
   // ==========================================
-  // !top [tuần]
+  // /top [tuần]
   // ==========================================
   async top(ctx, sheetNameArg) {
     if (ctx.channel.id !== ROOMS.KPI) return;
@@ -97,7 +97,7 @@ export default class KPI extends Cog {
     this.lastTopTime = nowMs;
 
     const w = this.weekInfo(sheetNameArg);
-    if (!w) return ctx.send('❌ Tuần không hợp lệ. Ví dụ: `!top 31/8-6/9`');
+    if (!w) return ctx.send('❌ Tuần không hợp lệ. Ví dụ: `/top 31/8-6/9`');
     const reqEnd = addMs(w.start, 7 * DAY_MS - 1000);
 
     try {
@@ -178,7 +178,7 @@ export default class KPI extends Cog {
   }
 
   // ==========================================
-  // !kpi | !kpi <tuần> | !kpi <momo> | !kpi <momo> <tuần>
+  // /kpi | /kpi <tuần> | /kpi <momo> | /kpi <momo> <tuần>
   // ==========================================
   async kpi(ctx, arg1, arg2) {
     if (ctx.channel.id !== ROOMS.KPI) return;
@@ -198,7 +198,7 @@ export default class KPI extends Cog {
     }
 
     const w = this.weekInfo(sheetNameArg);
-    if (!w) return ctx.reply('❌ Tuần không hợp lệ. Ví dụ: `!kpi 31/8-6/9`');
+    if (!w) return ctx.reply('❌ Tuần không hợp lệ. Ví dụ: `/kpi 31/8-6/9`');
 
     const prevStart = addMs(w.start, -7 * DAY_MS);
     const prevEnd = addMs(prevStart, 6 * DAY_MS);
@@ -366,7 +366,7 @@ export default class KPI extends Cog {
   }
 
   // ==========================================
-  // !lamviec - ping Sĩ quan 0 KPI tuần này
+  // /lamviec - ping Sĩ quan 0 KPI tuần này
   // ==========================================
   async lamviec(ctx) {
     if (ctx.channel.id !== ROOMS.KPI) return;

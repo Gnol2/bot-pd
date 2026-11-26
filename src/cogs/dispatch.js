@@ -152,11 +152,11 @@ export default class Dispatch extends Cog {
     }
   }
 
-  // !updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]
+  // /updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]
   async updateDispatch(ctx, fromStr, toStr) {
     if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const r = this.parseRange(fromStr, toStr);
-    if (!r) return ctx.send('⚠️ Cú pháp: `!updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updatedispatch 01/11/2026 07/11/2026`');
+    if (!r) return ctx.send('⚠️ Cú pháp: `/updatedispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `/updatedispatch 01/11/2026 07/11/2026`');
 
     const msg = await ctx.send(`⏳ Đang đồng bộ Dispatch ${r.title} lên Sheets...`);
     try {
@@ -170,11 +170,11 @@ export default class Dispatch extends Cog {
     }
   }
 
-  // !dispatch [dd/mm/yyyy] [dd/mm/yyyy]
+  // /dispatch [dd/mm/yyyy] [dd/mm/yyyy]
   async dispatchStat(ctx, fromStr, toStr) {
     if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const r = this.parseRange(fromStr, toStr);
-    if (!r) return ctx.send('⚠️ Cú pháp: `!dispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!dispatch 01/11/2026 07/11/2026`');
+    if (!r) return ctx.send('⚠️ Cú pháp: `/dispatch [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `/dispatch 01/11/2026 07/11/2026`');
 
     const msg = await ctx.send(`⏳ Đang thống kê Dispatch ${r.title}...`);
     try {
@@ -233,7 +233,7 @@ export default class Dispatch extends Cog {
     }
   }
 
-  // !dispatchlist [limit]
+  // /dispatchlist [limit]
   async dispatchList(ctx, limitArg) {
     if (!this.hasPerm(ctx.author)) return ctx.send(NO_PERM);
     const limit = limitArg && /^\d+$/.test(limitArg) ? parseInt(limitArg, 10) : 5000;

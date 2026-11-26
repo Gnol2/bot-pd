@@ -102,11 +102,11 @@ export default class LogHandcuff extends Cog {
     }
   }
 
-  // !congtay <ID> dd/mm-dd/mm
+  // /congtay <ID> dd/mm-dd/mm
   async congtay(ctx, copId, dateRange) {
     if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     if (!copId || !dateRange || !dateRange.includes('-')) {
-      return ctx.send('⚠️ Cú pháp: `!congtay <ID> <DD/MM-DD/MM>`\nVí dụ: `!congtay 12345 01/11-07/11`');
+      return ctx.send('⚠️ Cú pháp: `/congtay <ID> <DD/MM-DD/MM>`\nVí dụ: `/congtay 12345 01/11-07/11`');
     }
 
     const [startStr, endStr] = dateRange.split('-');

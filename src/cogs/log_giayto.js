@@ -1,15 +1,11 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { cell, fmt, toVN, sanitizeVal, Mutex } from '../utils.js';
+import { S, at, cell, fmt, toVN, sanitizeVal, isGplmbName } from '../utils.js';
 
-// Ghi log Property Deed -> sheet Giay-To
+// Ghi log Property Deed -> sheet Giay-To.
+// GPLMB mới: xoá mọi GPLMB cũ của cùng momo người nhận (kể cả bằng đã tịch thu, dòng cũ để trống tên giấy phép),
+// bằng mới tính lại từ 0 vi phạm.
 export default class LogGiayTo extends Cog {
-  constructor(bot) {
-    super(bot);
-    // Bản Python gọi gspread đồng bộ nên tự xếp hàng; bản JS cần khoá để 2 log cùng lúc không ghi đè cùng 1 dòng
-    this.lock = new Mutex();
-  }
-
   async onMessage(message) {
     if (this.isSelf(message)) return;
     if (message.channel.id !== ROOMS.GIAY_TO || !message.embeds.length) return;
@@ -40,11 +36,32 @@ export default class LogGiayTo extends Cog {
 
         const rowData = [ltl, nL, ntn, ntid, nnn, nnid, tdd, dc, 0, 0];
 
-        await this.lock.run(async () => {
+        await this.bot.giayToLock.run(async () => {
           const ws = this.bot.sheets.giayTo;
+          const all = await ws.getAllValues();
+
+          // GPLMB cũ của cùng momo người nhận (tìm trước khi ghi bằng mới)
+          const oldRows = [];
+          if (nnid && isGplmbName(dc)) {
+            for (let i = 1; i < all.length; i++) {
+              const r = all[i];
+              const loai = S(at(r, 0));
+              if (!loai.includes('Property Deed') && !loai.includes('GPLMB')) continue;
+              if (S(at(r, 5)) === nnid && isGplmbName(at(r, 7), { allowEmpty: true })) oldRows.push(i + 1);
+            }
+          }
+
+          // Ghi bằng mới trước, xoá bằng cũ sau: lỗi khi xoá thì vẫn không mất log bằng mới
           const colA = await ws.colValues(1);
           const nextRow = colA.length + 1;
           await ws.updateCells(rowData.map((v, i) => cell(nextRow, i + 1, sanitizeVal(v))));
+
+          if (oldRows.length) {
+            await ws.deleteRows(oldRows);
+            console.log(`[GiayTo] GPLMB mới của momo ${nnid}: đã xoá ${oldRows.length} GPLMB cũ (hàng ${oldRows.join(', ')})`);
+            // Báo gplmb: số hàng đã dồn lên (bỏ cache) + tắt nhắc tịch thu bằng cũ của momo này
+            this.bot.emit('giayToRowsDeleted', { momo: nnid });
+          }
         });
       }
     } catch (e) {

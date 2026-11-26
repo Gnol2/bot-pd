@@ -7,6 +7,18 @@ import { BOT_ADMIN_ROLE } from './config.js';
 export const S = (v) => (v === null || v === undefined ? '' : String(v)).trim(); // str(x).strip()
 export const at = (row, i) => (row && i < row.length ? row[i] : ''); // row[i] an toàn
 export const isDigits = (v) => /^\d+$/.test(String(v)); // str.isdigit()
+
+// Lột dấu tiếng Việt (giống unicodedata NFKD + bỏ ký tự combining)
+export const removeAccents = (s) => (s ? String(s).normalize('NFKD').replace(/\p{M}/gu, '').replace(/[đĐ]/g, 'd') : '');
+
+// Cột H (Tên Giấy Phép) của sheet Giay-To có phải GPLMB không. Sheet dùng chung "Property Deed" cho cả
+// giấy kết hôn, đăng ký xe... nên phải lọc theo tên. Bắt cả lỗi gõ: "may bay", "may nay", "GPLMB", "GLPMB".
+// allowEmpty: dòng cũ để trống cột H vẫn tính là GPLMB (trước đây bot coi mọi Property Deed là GPLMB).
+export const isGplmbName = (ten, { allowEmpty = false } = {}) => {
+  const c = removeAccents(ten).toUpperCase().replace(/\s+/g, ' ').trim();
+  if (!c) return allowEmpty;
+  return /MAY [BN]AY|GPLMB|GLPMB/.test(c);
+};
 export const toInt = (v, def = 0) => (isDigits(v) ? parseInt(String(v), 10) : def);
 export const cleanMoney = (v) => String(v).replace(/[.,$]/g, '').trim();
 export const money = (n) => Number(n).toLocaleString('en-US'); // f"{n:,}"

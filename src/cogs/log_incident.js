@@ -364,7 +364,7 @@ export default class LogIncident extends Cog {
     return dict;
   }
 
-  // !updateincident [dd/mm/yyyy] [dd/mm/yyyy]
+  // /updateincident [dd/mm/yyyy] [dd/mm/yyyy]
   async updateIncident(ctx, fromStr, toStr) {
     if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
 
@@ -373,12 +373,12 @@ export default class LogIncident extends Cog {
     if (!fromStr) {
       from = addMs(now, -24 * HOUR_MS);
       to = now;
-      await ctx.send('⏳ Đang quét bù Incident 24h qua...\nℹ️ Quét theo ngày: `!updateincident 01/07/2026 15/07/2026`');
+      await ctx.send('⏳ Đang quét bù Incident 24h qua...\nℹ️ Quét theo ngày: `/updateincident 01/07/2026 15/07/2026`');
     } else {
       from = parseDMY(fromStr);
       const toDay = toStr ? parseDMY(toStr) : now;
       if (!from || !toDay) {
-        return ctx.send('⚠️ Cú pháp: `!updateincident [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updateincident 01/07/2026 15/07/2026`');
+        return ctx.send('⚠️ Cú pháp: `/updateincident [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `/updateincident 01/07/2026 15/07/2026`');
       }
       to = endOfDay(toDay);
       await ctx.send(`⏳ Đang quét bù Incident từ **${fmt(from, 'DD/MM/YYYY')}** đến **${fmt(to, 'DD/MM/YYYY')}**...`);

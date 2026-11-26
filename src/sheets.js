@@ -128,6 +128,16 @@ export class Worksheet {
     await this.api.spreadsheets.batchUpdate({ spreadsheetId: this.spreadsheetId, requestBody: { requests } });
   }
 
+  // Xoá hẳn các hàng (số hàng 1-indexed), hàng bên dưới dồn lên. Xoá từ dưới lên để số hàng không lệch nhau.
+  async deleteRows(rowNumbers) {
+    const rows = [...new Set(rowNumbers)].filter((r) => r >= 1).sort((a, b) => b - a);
+    if (!rows.length) return;
+    await this.batch(
+      rows.map((r) => ({ deleteDimension: { range: { sheetId: this.sheetId, dimension: 'ROWS', startIndex: r - 1, endIndex: r } } })),
+    );
+    this.rowCount -= rows.length;
+  }
+
   async addRows(n) {
     await this.api.spreadsheets.batchUpdate({
       spreadsheetId: this.spreadsheetId,

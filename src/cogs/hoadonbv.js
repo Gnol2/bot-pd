@@ -4,7 +4,7 @@ import { hasRole, nowVN, addMs, DAY_MS, startOfDay, endOfDay, parseDMY, fmt, par
 import { backfillBills } from './hoadon.js';
 
 // Hóa đơn Bệnh viện "Chưa thanh toán" -> sheet Hoa-Don-BV
-// (Bản Python không có module này trong cogs_list -> mặc định không load, bật bằng `!load hoadonbv`)
+// (Bản Python không có module này trong cogs_list -> mặc định không load, bật bằng `/load hoadonbv`)
 export default class HoaDonBV extends Cog {
   constructor(bot) {
     super(bot);
@@ -59,7 +59,7 @@ export default class HoaDonBV extends Cog {
       fromDate = parseDMY(fromStr);
       const toDay = toStr ? parseDMY(toStr) : now;
       if (!fromDate || !toDay) {
-        return ctx.send('⚠️ Cú pháp: `!updatehoadonbv [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updatehoadonbv 01/06/2026 15/06/2026`');
+        return ctx.send('⚠️ Cú pháp: `/updatehoadonbv [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `/updatehoadonbv 01/06/2026 15/06/2026`');
       }
       toDate = endOfDay(toDay);
       await ctx.send(

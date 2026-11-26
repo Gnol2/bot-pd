@@ -70,7 +70,6 @@ export default class DangKyCa extends Cog {
       lichtruc: (ctx, a) => this.lichTruc(ctx, a),
       cacuatoi: (ctx) => this.caCuaToi(ctx),
       xoaca: (ctx, ...a) => this.xoaCa(ctx, a),
-      help: (ctx) => this.help(ctx),
       helpca: (ctx) => this.help(ctx, true),
     };
     // Vẽ lại bảng khi khởi động, mỗi 6 tiếng và ngay sau 00:00 VN (lăn cửa sổ 7 ngày)
@@ -212,13 +211,13 @@ export default class DangKyCa extends Cog {
   caStart = (day, ca) => addMs(day, (ca - 1) * CA_HOURS * HOUR_MS);
   caEnd = (day, ca) => addMs(day, ca * CA_HOURS * HOUR_MS);
 
-  // ---------- !dangky <ca> [ca2] [ngày] ----------
+  // ---------- /dangky <ca> [ca2] [ngày] ----------
   async dangKy(ctx, args) {
     if (!this.inRoom(ctx)) return;
     const p = this.parseArgs(args, MAX_CA_PER_DAY);
     if (p.error) return ctx.reply(p.error);
     if (!p.cas.length) {
-      return ctx.reply(`⚠️ Cú pháp: \`!dangky <ca> [ca 2] [ngày]\`\nVí dụ: \`!dangky 8\`, \`!dangky 14-16 20-22 mai\`, \`!dangky 3 18/11\` (xem ca trống: \`!lichtruc\`)`);
+      return ctx.reply(`⚠️ Cú pháp: \`/dangky <ca> [ca 2] [ngày]\`\nVí dụ: \`/dangky 8\`, \`/dangky 14-16 20-22 mai\`, \`/dangky 3 18/11\` (xem ca trống: \`/lichtruc\`)`);
     }
 
     const me = await this.findOfficer(ctx.author);
@@ -260,12 +259,12 @@ export default class DangKyCa extends Cog {
     });
   }
 
-  // ---------- !huyca <ca> [ngày] ----------
+  // ---------- /huyca <ca> [ngày] ----------
   async huyCa(ctx, args) {
     if (!this.inRoom(ctx)) return;
     const p = this.parseArgs(args, MAX_CA_PER_DAY);
     if (p.error) return ctx.reply(p.error);
-    if (!p.cas.length) return ctx.reply('⚠️ Cú pháp: `!huyca <ca> [ngày]`\nVí dụ: `!huyca 8`, `!huyca 14-16 mai`');
+    if (!p.cas.length) return ctx.reply('⚠️ Cú pháp: `/huyca <ca> [ngày]`\nVí dụ: `/huyca 8`, `/huyca 14-16 mai`');
 
     const me = await this.findOfficer(ctx.author);
     if (!me) return ctx.reply('❌ Bạn không có trong danh sách PD (tab Online).');
@@ -281,7 +280,7 @@ export default class DangKyCa extends Cog {
       for (const ca of p.cas) {
         const r = mine.find((x) => x.ca === ca);
         if (!r) errors.push(`Bạn chưa đăng ký Ca ${ca} ngày ${key}.`);
-        else if (this.caStart(p.day, ca) <= now) errors.push(`Ca ${ca} đã bắt đầu, không tự hủy được (nhờ quản lý dùng \`!xoaca\`).`);
+        else if (this.caStart(p.day, ca) <= now) errors.push(`Ca ${ca} đã bắt đầu, không tự hủy được (nhờ quản lý dùng \`/xoaca\`).`);
         else {
           cells.push({ row: r.row, col: 8, value: CANCELLED }, { row: r.row, col: 10, value: `Tự hủy ${fmt(now, 'DD/MM HH:mm')}` });
           done.push(ca);
@@ -297,14 +296,14 @@ export default class DangKyCa extends Cog {
     });
   }
 
-  // ---------- !xoaca <callsign|momo> <ca> [ngày] (quản lý) ----------
+  // ---------- /xoaca <callsign|momo> <ca> [ngày] (quản lý) ----------
   async xoaCa(ctx, args) {
     if (!this.inRoom(ctx)) return;
     if (!this.isAdmin(ctx.author)) return ctx.reply(NO_PERM);
     const [who, ...rest] = args.filter(Boolean);
     const p = this.parseArgs(rest, NUM_CA);
     if (!who || p.error || !p.cas.length) {
-      return ctx.reply(p.error ?? '⚠️ Cú pháp: `!xoaca <callsign|momo> <ca> [ngày]`\nVí dụ: `!xoaca 609 8 mai`');
+      return ctx.reply(p.error ?? '⚠️ Cú pháp: `/xoaca <callsign|momo> <ca> [ngày]`\nVí dụ: `/xoaca 609 8 mai`');
     }
     return this.withLock(async () => {
       const ws = await this.dataSheet();
@@ -318,12 +317,12 @@ export default class DangKyCa extends Cog {
     });
   }
 
-  // ---------- !lichtruc [ngày] ----------
+  // ---------- /lichtruc [ngày] ----------
   async lichTruc(ctx, dayArg) {
     if (!this.inRoom(ctx)) return;
     const today = startOfDay(nowVN());
     const day = dayArg ? parseDay(dayArg, today) : today;
-    if (!day) return ctx.reply('❌ Ngày không hợp lệ. Ví dụ: `!lichtruc mai`, `!lichtruc 18/11`');
+    if (!day) return ctx.reply('❌ Ngày không hợp lệ. Ví dụ: `/lichtruc mai`, `/lichtruc 18/11`');
 
     const ws = await this.dataSheet();
     const key = dayKey(day);
@@ -341,14 +340,13 @@ export default class DangKyCa extends Cog {
     const embed = new EmbedBuilder()
       .setTitle(`🗓️ Lịch ca trực ${dayShort(day)}/${day.getUTCFullYear()}`)
       .setColor(COLORS.blue)
-      .setDescription(`${lines.join('\n')}\n\n🟢 trống · 🟡 còn chỗ · 🔴 đủ người · ⚫ đã qua\nĐăng ký: \`!dangky <ca> [ca 2] [ngày]\` · Hủy: \`!huyca <ca> [ngày]\``)
+      .setDescription(`${lines.join('\n')}\n\n🟢 trống · 🟡 còn chỗ · 🔴 đủ người · ⚫ đã qua\nĐăng ký: \`/dangky <ca> [ca 2] [ngày]\` · Hủy: \`/huyca <ca> [ngày]\``)
       .setFooter({ text: `Tối đa ${MAX_CA_PER_DAY} ca/người/ngày · ${MAX_PER_CA} người/ca` });
     return ctx.reply({ embeds: [embed] });
   }
 
-  // ---------- !help (trong kênh đăng ký ca) / !helpca (mọi kênh) ----------
-  async help(ctx, anyRoom = false) {
-    if (!anyRoom && !this.inRoom(ctx)) return;
+  // ---------- /helpca (mọi kênh) — /help giờ là danh sách tất cả lệnh (index.js) ----------
+  async help(ctx) {
     const caList = Array.from({ length: NUM_CA }, (_, i) => `\`${p2(i + 1)}\` ${caLabel(i + 1)}`);
     const half = NUM_CA / 2;
     const embed = new EmbedBuilder()
@@ -364,18 +362,18 @@ export default class DangKyCa extends Cog {
         {
           name: '📝 Lệnh cho PD',
           value: [
-            '`!dangky <ca> [ca 2] [ngày]` — đăng ký ca',
-            '  ↳ `!dangky 8` · `!dangky 14-16 20-22` · `!dangky 3 mai` · `!dangky 5 18/11`',
-            '`!huyca <ca> [ngày]` — hủy ca (trước giờ ca bắt đầu)',
-            '  ↳ `!huyca 8` · `!huyca 14-16 mai`',
-            '`!lichtruc [ngày]` — xem ca trống / đã đủ người trong ngày',
-            '  ↳ `!lichtruc` · `!lichtruc mai` · `!lichtruc 18/11`',
-            '`!cacuatoi` — xem ca mình đã đăng ký 7 ngày tới',
+            '`/dangky <ca> [ca 2] [ngày]` — đăng ký ca',
+            '  ↳ `/dangky 8` · `/dangky 14-16 20-22` · `/dangky 3 mai` · `/dangky 5 18/11`',
+            '`/huyca <ca> [ngày]` — hủy ca (trước giờ ca bắt đầu)',
+            '  ↳ `/huyca 8` · `/huyca 14-16 mai`',
+            '`/lichtruc [ngày]` — xem ca trống / đã đủ người trong ngày',
+            '  ↳ `/lichtruc` · `/lichtruc mai` · `/lichtruc 18/11`',
+            '`/cacuatoi` — xem ca mình đã đăng ký 7 ngày tới',
           ].join('\n'),
         },
         {
           name: `🛡️ Lệnh quản lý (role ${BOT_ADMIN_ROLE})`,
-          value: '`!xoaca <callsign|momo> <ca> [ngày]` — xóa ca của PD khác\n  ↳ `!xoaca 609 8 mai`',
+          value: '`/xoaca <callsign|momo> <ca> [ngày]` — xóa ca của PD khác\n  ↳ `/xoaca 609 8 mai`',
         },
         { name: '🕒 Danh sách ca', value: caList.slice(0, half).join('\n'), inline: true },
         { name: '​', value: caList.slice(half).join('\n'), inline: true },
@@ -389,11 +387,11 @@ export default class DangKyCa extends Cog {
           ].join('\n'),
         },
       )
-      .setFooter({ text: 'Gõ !help trong kênh đăng ký ca hoặc !helpca ở bất kỳ kênh nào' });
+      .setFooter({ text: 'Gõ /helpca ở bất kỳ kênh nào · /help để xem tất cả lệnh bot' });
     return ctx.reply({ embeds: [embed] });
   }
 
-  // ---------- !cacuatoi ----------
+  // ---------- /cacuatoi ----------
   async caCuaToi(ctx) {
     if (!this.inRoom(ctx)) return;
     const me = await this.findOfficer(ctx.author);
@@ -421,7 +419,7 @@ export default class DangKyCa extends Cog {
     const today = startOfDay(nowVN());
     const days = Array.from({ length: DAYS_AHEAD + 1 }, (_, i) => addMs(today, i * DAY_MS));
     const grid = [
-      [`LỊCH CA TRỰC GCPD (cập nhật ${fmt(nowVN(), 'HH:mm DD/MM/YYYY')}) — đăng ký bằng !dangky trên Discord`, '', '', '', '', '', '', '', ''],
+      [`LỊCH CA TRỰC GCPD (cập nhật ${fmt(nowVN(), 'HH:mm DD/MM/YYYY')}) — đăng ký bằng /dangky trên Discord`, '', '', '', '', '', '', '', ''],
       ['Ca', 'Khung giờ', ...days.map(dayShort)],
     ];
     for (let ca = 1; ca <= NUM_CA; ca++) {

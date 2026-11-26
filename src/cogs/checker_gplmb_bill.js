@@ -1,9 +1,6 @@
 import { Cog } from '../core/Cog.js';
 import { ROOMS } from '../config.js';
-import { S, cell, nowVN, parseYMDHMS, cleanMoney, isDigits, roleByName } from '../utils.js';
-
-// Lột dấu tiếng Việt (giống unicodedata NFKD + bỏ ký tự combining)
-const removeAccents = (s) => (s ? String(s).normalize('NFKD').replace(/\p{M}/gu, '') : '');
+import { S, cell, nowVN, parseYMDHMS, cleanMoney, isDigits, roleByName, isGplmbName } from '../utils.js';
 
 // Mỗi 3 phút: cấp GPLMB phải có hóa đơn >= $50,000 trong ±10 phút, không có thì báo Đội Bay
 export default class CheckerGPLMBBill extends Cog {
@@ -31,7 +28,12 @@ export default class CheckerGPLMBBill extends Cog {
     return [momo, null];
   }
 
-  async check() {
+  // Đọc và đánh dấu "Đã Check" theo số hàng -> giữ khoá chung để log_giayto không xoá hàng xen giữa
+  check() {
+    return this.bot.giayToLock.run(() => this.checkLocked());
+  }
+
+  async checkLocked() {
     try {
       const gtRows = await this.bot.sheets.giayTo.getAllValues();
       const hdRows = await this.bot.sheets.hoadon.getAllValues();
@@ -71,8 +73,7 @@ export default class CheckerGPLMBBill extends Cog {
         if (nguoiLap === 'Hệ Thống') continue;
 
         const tenGp = row.length > 7 ? S(row[7]) : '';
-        const clean = removeAccents(tenGp).toUpperCase();
-        if (!clean.includes('MAY BAY') && !clean.includes('GPLMB')) continue;
+        if (!isGplmbName(tenGp)) continue;
 
         const daCheck = row.length > 11 ? S(row[11]) : '';
         if (daCheck === 'Đã Check') continue;

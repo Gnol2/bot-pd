@@ -14,9 +14,9 @@ import { S } from '../utils.js';
 // Tra cứu file "Tội phạm phải đọc":
 //   tab luatpd       : Nghề | Chi tiết nghề | Link     -> mã 1, 2, 3...
 //   tab tricklobicam : STT - Liên quan | Nội dung     -> mã T1, T2...
-//   !luat            -> danh sách + menu chọn, chọn mục nào bot trả chi tiết (chỉ người chọn thấy)
-//   !luat <mã>       -> xem theo mã (vd: !luat 5, !luat t2)
-//   !luat <từ khóa>  -> tìm theo tên/nội dung (không cần gõ dấu)
+//   /luat            -> danh sách + menu chọn, chọn mục nào bot trả chi tiết (chỉ người chọn thấy)
+//   /luat <mã>       -> xem theo mã (vd: /luat 5, /luat t2)
+//   /luat <từ khóa>  -> tìm theo tên/nội dung (không cần gõ dấu)
 const SECTIONS = [
   { code: '', tab: 'luatpd', label: 'Luật nghề', icon: '📜', color: 0x2b6cb0 },
   { code: 'T', tab: 'tricklobicam', label: 'Trick lỏ bị cấm', icon: '🚫', color: 0xc53030 },
@@ -157,7 +157,7 @@ export default class Luat extends Cog {
       .setColor(r.sec.color)
       .setTitle(clip(`${r.sec.icon} ${r.id}. ${r.name}`, 256))
       .setDescription(clip(formatDetail(r.detail), 4000))
-      .setFooter({ text: `${r.sec.label} ${r.no}/${r.sec.count} • Gõ !luat để xem danh sách` });
+      .setFooter({ text: `${r.sec.label} ${r.no}/${r.sec.count} • Gõ /luat để xem danh sách` });
     if (/^https?:\/\//.test(r.link)) e.setURL(r.link);
     return e;
   }
@@ -207,7 +207,7 @@ export default class Luat extends Cog {
       .setColor(SECTIONS[0].color)
       .setTitle(title)
       .setDescription(clip(`${note}\n\n${blocks.join('\n\n')}`, 4000))
-      .setFooter({ text: 'Nguồn: Tội phạm phải đọc • !luat <mã | từ khóa> để xem nhanh' });
+      .setFooter({ text: 'Nguồn: Tội phạm phải đọc • /luat <mã | từ khóa> để xem nhanh' });
   }
 
   async cmdLuat(ctx, args) {
@@ -230,7 +230,7 @@ export default class Luat extends Cog {
     const code = /^([a-z]?)0*(\d+)$/i.exec(q);
     if (code) {
       const r = this.find(`${code[1]}${code[2]}`);
-      if (!r) return ctx.reply(`📭 Không có mục **${q}**. Gõ \`!luat\` để xem danh sách.`);
+      if (!r) return ctx.reply(`📭 Không có mục **${q}**. Gõ \`/luat\` để xem danh sách.`);
       return ctx.send({ embeds: [this.ruleEmbed(r)], components: this.linkRow(r) });
     }
 
@@ -240,7 +240,7 @@ export default class Luat extends Cog {
       const words = nq.split(' ').filter((w) => w.length > 1);
       found = rules.filter((r) => words.every((w) => r.key.includes(w) || r.text.includes(w)));
     }
-    if (!found.length) return ctx.reply(`📭 Không tìm thấy mục nào khớp **${q}**. Gõ \`!luat\` để xem danh sách.`);
+    if (!found.length) return ctx.reply(`📭 Không tìm thấy mục nào khớp **${q}**. Gõ \`/luat\` để xem danh sách.`);
     if (found.length === 1) {
       return ctx.send({ embeds: [this.ruleEmbed(found[0])], components: this.linkRow(found[0]) });
     }
@@ -255,7 +255,7 @@ export default class Luat extends Cog {
     await this.getRules();
     const r = this.find(i.values[0]);
     if (!r) {
-      return i.reply({ content: '⚠️ Danh sách đã thay đổi, gõ lại `!luat`.', flags: MessageFlags.Ephemeral });
+      return i.reply({ content: '⚠️ Danh sách đã thay đổi, gõ lại `/luat`.', flags: MessageFlags.Ephemeral });
     }
     await i.reply({ embeds: [this.ruleEmbed(r)], components: this.linkRow(r), flags: MessageFlags.Ephemeral });
   }

@@ -14,7 +14,7 @@ const HOME_COLS = {
 // Người có CHỨC VỤ hoặc ROLE IC chứa cụm này coi như đã nghỉ -> không đưa vào Online
 const FIRED_RE = /sa\s*thải/i;
 
-// Mỗi ngày 00:00 giờ VN, hoặc bằng !updategcpdhome:
+// Mỗi ngày 00:00 giờ VN, hoặc bằng /updategcpdhome:
 //  1. Copy toàn bộ "GCPD HOME" -> "Danh-Sach-PD"
 //  2. Dựng lại danh sách A-G của sheet "Online" từ GCPD HOME, GIỮ NGUYÊN Ghi chú (F), Duty (H), Radio (I) theo Momo ID
 export default class SyncGCPD extends Cog {

@@ -37,7 +37,7 @@ export default class HoaDon extends Cog {
     }
   }
 
-  // !updatehoadon [dd/mm/yyyy] [dd/mm/yyyy]
+  // /updatehoadon [dd/mm/yyyy] [dd/mm/yyyy]
   async updateHoaDon(ctx, fromStr, toStr) {
     if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
 
@@ -53,7 +53,7 @@ export default class HoaDon extends Cog {
       fromDate = parseDMY(fromStr);
       const toDay = toStr ? parseDMY(toStr) : now;
       if (!fromDate || !toDay) {
-        return ctx.send('⚠️ Cú pháp: `!updatehoadon [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `!updatehoadon 01/07/2026 15/07/2026`');
+        return ctx.send('⚠️ Cú pháp: `/updatehoadon [dd/mm/yyyy] [dd/mm/yyyy]`\nVí dụ: `/updatehoadon 01/07/2026 15/07/2026`');
       }
       toDate = endOfDay(toDay);
       await ctx.send(

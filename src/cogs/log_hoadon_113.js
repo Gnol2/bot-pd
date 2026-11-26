@@ -5,7 +5,7 @@ import {
   parseDMY, parseYMD, parseYMDHMS, callsignOf, history, processEmbedMessage, sanitizeRow,
 } from '../utils.js';
 
-// Hóa đơn VPGT/KTHC "Chưa thanh toán" -> sheet Hoa-Don-113; lệnh !quetdulieu và !hoadon (tính thưởng 113)
+// Hóa đơn VPGT/KTHC "Chưa thanh toán" -> sheet Hoa-Don-113; lệnh /quetdulieu và /hoadon (tính thưởng 113)
 export default class LogHoaDon113 extends Cog {
   constructor(bot) {
     super(bot);
@@ -44,7 +44,7 @@ export default class LogHoaDon113 extends Cog {
     }
   }
 
-  // !quetdulieu [momo] DD/MM/YYYY-DD/MM/YYYY
+  // /quetdulieu [momo] DD/MM/YYYY-DD/MM/YYYY
   async quetDuLieu(ctx) {
     if (ctx.channel.id !== ROOMS.HOA_DON) return;
 
@@ -64,7 +64,7 @@ export default class LogHoaDon113 extends Cog {
     } else if (parts.length === 3) {
       [startStr, endStr] = [parts[1], parts[2]];
     } else {
-      return ctx.reply('⚠️ Cú pháp: `!quetdulieu [momo] <DD/MM/YYYY-DD/MM/YYYY>`\nVí dụ: `!quetdulieu 01/11/2026-07/11/2026`');
+      return ctx.reply('⚠️ Cú pháp: `/quetdulieu [momo] <DD/MM/YYYY-DD/MM/YYYY>`\nVí dụ: `/quetdulieu 01/11/2026-07/11/2026`');
     }
 
     try {
@@ -96,7 +96,7 @@ export default class LogHoaDon113 extends Cog {
     }
   }
 
-  // !hoadon hoặc !hoadon DD/MM-DD/MM
+  // /hoadon hoặc /hoadon DD/MM-DD/MM
   async hoaDon(ctx) {
     if (ctx.channel.id !== ROOMS.KPI) return;
 
@@ -129,7 +129,7 @@ export default class LogHoaDon113 extends Cog {
       startDate = sd;
       endFull = addMs(ed, DAY_MS - 1000);
     } else {
-      return ctx.reply('⚠️ Cú pháp: `!hoadon [DD/MM-DD/MM]`');
+      return ctx.reply('⚠️ Cú pháp: `/hoadon [DD/MM-DD/MM]`');
     }
 
     try {
