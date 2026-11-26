@@ -647,7 +647,7 @@ export default class CheckDam extends Cog {
   dieuDamMsg(reason, onduty) {
     const top = this.findDieuDam(onduty);
     const who = top ? top.mentions.join(' ') : 'cấp quản lý';
-    let msg = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân. \n **Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
+    let msg = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân.\n **Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
     if (!top) msg += `\n*(Không có ai từ ${DIEU_DAM_RANKS.at(-1).join('/')} trở lên đang onduty)*`;
     return msg.length > 2000 ? msg.slice(0, 1997) + '...' : msg;
   }
