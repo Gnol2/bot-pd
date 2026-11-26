@@ -36,7 +36,7 @@ export const ROOMS = {
   HANDCUFF: '1471744834581827708',
   CLOCKOUT: '1414548963247390770',
   DISPATCH: '1518939026391040050',
-  PHONGVAN: '1571029642377429114',
+  BANGIAO: '1575571194999214130',
 
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
@@ -53,6 +53,17 @@ export const ROOMS = {
 // Giá trị khớp đúng cột E (chức vụ) của sheet Online. Bot ping TẤT CẢ người onduty thuộc các cấp này,
 // thứ tự tag theo thứ tự cấp bên dưới. Ngang cấp thì để chung một mảng, vd: ['GD', 'PGD'].
 export const DIEU_DAM_RANKS = [['GD'], ['S-PGD'], ['PGD'], ['ST', 'GSDPUN', 'GSDB'], ['SP', 'TKDPUN', 'PGSDB'], ['DTDPUN']];
+
+// ==========================================
+// ỨNG TUYỂN PD (module ungtuyen): nút "Nộp đơn" -> form -> kênh ticket riêng
+// ==========================================
+export const UNG_TUYEN = {
+  CATEGORY: '', // ID danh mục (category) chứa kênh ticket. Để trống '' = cùng danh mục với kênh đặt nút
+  // Các role dưới đây + PD bot admin đều xem và nhắn tin được trong kênh đơn
+  FTO_ROLES: ['FTO'], // Nhận dạy (/nhanday); đóng ticket khi chưa ai nhận dạy hoặc đã bàn giao
+  SO_ROLES: ['Sở Trưởng Cảnh Sát', 'Sở Phó Cảnh Sát'], // Được tag khi /bangiao và trong thông báo kênh BANGIAO lúc đóng ticket
+  TEACH_TAB: 'Nhan-Day', // Tab lưu nhận dạy trong file tuyển dụng (SHEET_IDS.PHONGVAN), tự tạo nếu chưa có
+};
 
 // Lấy ID kênh cảnh báo: dùng kênh riêng nếu đã điền, không thì rơi về VI_PHAM
 export const alertRoom = (key) => ROOMS[key] || ROOMS.VI_PHAM;
@@ -79,7 +90,7 @@ export const COGS = [
   'check_giayto',
   'dispatch',
   'role',
-  'phongvan',
+  'ungtuyen', // Đơn ứng tuyển PD qua nút Discord (thay cho phongvan theo dõi Google Form, bật lại bằng /load phongvan)
   'sync_gcpd',
   'dispatch_gcpd',
   'log_nhansu',

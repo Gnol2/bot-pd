@@ -70,6 +70,11 @@ export const SLASH_META = {
   top: { desc: 'Bảng xếp hạng KPI tuần', args: '[tuần] — vd: 31/8-6/9' },
   kpi: { desc: 'Xem KPI', args: '[momo] [tuần] — vd: 12345 31/8-6/9' },
   lamviec: { desc: 'Ping Sĩ quan 0 KPI tuần này', args: null },
+
+  // ungtuyen
+  ungtuyenpanel: { desc: 'Đặt bảng nút "Nộp đơn" ứng tuyển PD vào kênh này (PD bot admin)', args: null },
+  nhanday: { desc: 'Nhận dạy học viên (gõ trong kênh đơn ứng tuyển)', args: null },
+  bangiao: { desc: 'Dạy xong, bàn giao học viên cho Sở (gõ trong kênh đơn ứng tuyển)', args: null },
 };
 
 export const ARG_OPTION = 'tham_so';
@@ -84,6 +89,7 @@ export const COG_LABELS = {
   check_dam: '📻 Đàm / 113',
   dispatch: '📡 Dispatch',
   luat: '📚 Luật',
+  ungtuyen: '📝 Ứng tuyển PD',
   log_handcuff: '🔗 Còng tay',
   hoadon: '🧾 Quét bù dữ liệu',
   hoadonbv: '🧾 Quét bù dữ liệu',
