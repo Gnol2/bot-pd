@@ -6,10 +6,10 @@ import {
   S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isBotAdmin, roleMention, csToMemberMap, history, cleanRadio, sendTemp, NO_PERM,
 } from '../utils.js';
 
-const IMMUNE_MOMO = ['23', '12678', '12510', '3840', '20444']; // Không lưu data
-const NO_PING_MOMO = ['281', '3466', '200']; // Đặc quyền không bị ping
-const HIDDEN_MOMO = ['3466']; // Ẩn khỏi bảng hiển thị
-const HIDDEN_CALLSIGN = ['281'];
+const IMMUNE_MOMO = ['23', '12678', '12510', '3840', '20444', '102']; // Không lưu data
+const NO_PING_MOMO = []; // Đặc quyền không bị ping
+const HIDDEN_MOMO = []; // Ẩn khỏi bảng hiển thị
+const HIDDEN_CALLSIGN = [];
 const PRIMARY_RADIOS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '113'];
 const MEMORY_FILE = 'radio_memory.json';
 const MEDAL_3 = ['🥇', '🥈', '🥉'];

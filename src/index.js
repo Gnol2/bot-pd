@@ -122,6 +122,7 @@ const adminCommands = {
 
 // /help: liệt kê lệnh của các module đang bật, gom theo nhóm (tự cập nhật khi load/unload module)
 adminCommands.help = async (ctx) => {
+  if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM); // Chỉ role PD bot admin
   const line = (n) => {
     const m = SLASH_META[n];
     // Chỉ lấy phần cú pháp, bỏ ví dụ/ghi chú (vẫn hiện đầy đủ trong ô tham_so khi gõ lệnh)

@@ -39,7 +39,7 @@ export const ROOMS = {
   PHONGVAN: '1571029642377429114',
 
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
-  DANG_KY_CA: '1571551051318829086', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
+  DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
 
   // Kênh riêng cho từng loại cảnh báo vi phạm. Để trống '' = gửi vào VI_PHAM như cũ.
   VP_MOMO_LA: '1575492565061337170', // Momo lạ vừa OnDuty (log_nhansu)
