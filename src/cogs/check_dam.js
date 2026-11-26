@@ -647,7 +647,7 @@ export default class CheckDam extends Cog {
   dieuDamMsg(reason, onduty) {
     const top = this.findDieuDam(onduty);
     const who = top ? top.mentions.join(' ') : 'cấp quản lý';
-    let msg = `🚨 ${reason}\nVui lòng ${who} tiến hành điều đàm sang đàm 113 để hỗ trợ người dân. Nếu có quá ít PD vui lòng di chuyển sang đàm 113 để chạy dispatch.`;
+    let msg = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân. \n **Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
     if (!top) msg += `\n*(Không có ai từ ${DIEU_DAM_RANKS.at(-1).join('/')} trở lên đang onduty)*`;
     return msg.length > 2000 ? msg.slice(0, 1997) + '...' : msg;
   }
@@ -698,24 +698,24 @@ export default class CheckDam extends Cog {
         this.empty113Minutes = 0;
       }
 
-      // Quá số lượng: >= 5 người, cùng 1 nhóm, liên tục 30 phút
-      if (count113 >= 5) {
-        if (JSON.stringify(this.overload.momos) === JSON.stringify(cur113Momos)) {
-          this.overload.minutes++;
-          if (this.overload.minutes >= 30) {
-            const msg = this.dieuDamMsg(
-              `**Đàm 113 đang quá số lượng quy định**: **${count113}** người liên tục hơn 30 phút (${in113.join(', ')}).`,
-              onduty,
-            );
-            await channel.send(msg);
-            this.overload.minutes = 0;
-          }
-        } else {
-          this.overload = { momos: cur113Momos, minutes: 1 };
-        }
-      } else {
-        this.overload = { momos: [], minutes: 0 };
-      }
+      // // Quá số lượng: >= 5 người, cùng 1 nhóm, liên tục 30 phút
+      // if (count113 >= 5) {
+      //   if (JSON.stringify(this.overload.momos) === JSON.stringify(cur113Momos)) {
+      //     this.overload.minutes++;
+      //     if (this.overload.minutes >= 30) {
+      //       const msg = this.dieuDamMsg(
+      //         `**Đàm 113 đang quá số lượng quy định**: **${count113}** người liên tục hơn 30 phút (${in113.join(', ')}).`,
+      //         onduty,
+      //       );
+      //       await channel.send(msg);
+      //       this.overload.minutes = 0;
+      //     }
+      //   } else {
+      //     this.overload = { momos: cur113Momos, minutes: 1 };
+      //   }
+      // } else {
+      //   this.overload = { momos: [], minutes: 0 };
+      // }
     } catch (e) {
       console.error('[Dam] LỖI theo dõi đàm 113:', e.message);
     }
