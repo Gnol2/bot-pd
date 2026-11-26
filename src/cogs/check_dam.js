@@ -407,12 +407,11 @@ export default class CheckDam extends Cog {
     return recent.map((h) => `${h.radio === '0' ? 'không đàm' : h.radio} (${this.formatTime(h.mins)})`).join(' → ');
   }
 
-  async buildRadioReport(guild, isAuto = false) {
+  // Bảng kênh đàm (chỉ hiển thị, không ping ai). guild giữ lại cho tương thích chỗ gọi.
+  async buildRadioReport(_guild, isAuto = false) {
     const allRows = await this.fetchSheetData();
-    const csMap = csToMemberMap(guild);
     const byRadio = new Map(); // radio -> [dòng]
     const noRadio = [];
-    const pings = [];
     let total = 0;
 
     for (let idx = 1; idx < allRows.length; idx++) {
@@ -435,9 +434,7 @@ export default class CheckDam extends Cog {
 
       if (!radio || radio === '0') {
         if (this.isNoPing(cs, momo)) continue;
-        const mb = csMap.get(cs);
-        if (mb) pings.push(mb.toString());
-        noRadio.push(`\`${cs}\` ${ten} (${momo}) — đã **${time}**${histStr}${mb ? '' : ' · *chưa khớp Discord*'}`);
+        noRadio.push(`\`${cs}\` ${ten} (${momo}) — đã **${time}**${histStr}`);
       } else {
         if (!byRadio.has(radio)) byRadio.set(radio, []);
         byRadio.get(radio).push(`\`${cs}\` ${ten} — **${time}**${histStr}`);
@@ -475,8 +472,7 @@ export default class CheckDam extends Cog {
     if (chunk.trim()) embeds.push(new EmbedBuilder().setTitle(embeds.length ? `${title} (tiếp)` : title).setColor(color).setDescription(chunk));
     embeds.at(-1)?.setFooter({ text: isAuto ? 'Tự cập nhật mỗi 5 phút' : 'GCPD Check đàm' });
 
-    const content = pings.length ? `⚠️ Vào đàm ngay: ${pings.join(' ')}` : '';
-    return { content: content.slice(0, 1950), embeds };
+    return { content: '', embeds };
   }
 
   async radioCmd(ctx) {
