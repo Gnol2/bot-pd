@@ -11,7 +11,6 @@ const NO_PING_MOMO = ['281', '3466', '200']; // Đặc quyền không bị ping
 const HIDDEN_MOMO = ['3466']; // Ẩn khỏi bảng hiển thị
 const HIDDEN_CALLSIGN = ['281'];
 const PRIMARY_RADIOS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '113'];
-const ROLE_113_RE = /\b(CSV|DT|CSVDB)\b/;
 const MEMORY_FILE = 'radio_memory.json';
 const MEDAL_3 = ['🥇', '🥈', '🥉'];
 const MEDAL_10 = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
@@ -328,7 +327,6 @@ export default class CheckDam extends Cog {
     for (const [cs, d] of Object.entries(this.radioMemory)) {
       const momo = d.momo ?? '';
       if (this.isHidden(cs, momo)) continue;
-      if (!ROLE_113_RE.test(d.role ?? '')) continue;
       if ((d[key] ?? 0) > 0) list.push({ cs, name: d.name, momo, mins: d[key] });
     }
     return list.sort((a, b) => b.mins - a.mins);
