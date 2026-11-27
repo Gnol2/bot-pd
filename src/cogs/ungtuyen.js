@@ -362,15 +362,19 @@ export default class UngTuyen extends Cog {
     return this.findTeach(rows, channelId);
   }
 
-  // Tên HV = "Tên Ingame" trong hồ sơ (tin nhắn đầu của bot trong kênh), không có thì lấy tên Discord của ứng viên
-  async hvName(channel, userId) {
+  // Thông tin HV từ hồ sơ (tin nhắn đầu của bot trong kênh):
+  // name = "Tên Ingame" (không có thì tên Discord), momo = số trong "Số MoMo / ID InGame" (không có -> '')
+  async hvInfo(channel, userId) {
     const msgs = await channel.messages.fetch({ after: '0', limit: 10 }).catch(() => null);
     const embed = msgs?.find((m) => m.author.id === this.bot.user.id && m.embeds[0]?.title?.includes('Hồ sơ ứng tuyển'))?.embeds[0];
-    const f = embed?.fields?.find((x) => x.name === 'Tên Ingame');
-    const name = f?.value?.replace(/```/g, '').trim();
-    if (name) return name;
-    const member = await channel.guild.members.fetch(userId).catch(() => null);
-    return member?.displayName ?? userId;
+    const field = (n) => embed?.fields?.find((x) => x.name === n)?.value?.replace(/```/g, '').trim() ?? '';
+    const momo = /\d+/.exec(field('Số MoMo / ID InGame'))?.[0] ?? '';
+    let name = field('Tên Ingame');
+    if (!name) {
+      const member = await channel.guild.members.fetch(userId).catch(() => null);
+      name = member?.displayName ?? userId;
+    }
+    return { name, momo };
   }
 
   async nhanDay(ctx) {
@@ -384,10 +388,11 @@ export default class UngTuyen extends Cog {
       const cur = this.findTeach(rows, ctx.channel.id);
       if (cur) return ctx.reply(`⚠️ Học viên này đã được **${cur.data[C.TEACHER]}** nhận dạy lúc \`${cur.data[C.TAKEN]}\`.`);
 
-      const hv = await this.hvName(ctx.channel, t.userId);
+      const { name: hv, momo } = await this.hvInfo(ctx.channel, t.userId);
       const now = nowText();
       const line = Array(TEACH_HEADER.length).fill('');
       line[C.HV] = sanitizeVal(hv);
+      line[C.MOMO] = momo ? `'${momo}` : ''; // momo trong hồ sơ, /bangiao dùng luôn số này
       line[C.TEACHER] = `'${csOf(ctx.author)}`; // lưu callsign, dạng chữ để giữ số 0 đầu (vd "01")
       line[C.TAKEN] = `'${now}`; // dạng chữ, Sheets không tự đổi ngày/tháng
       line[C.CHANNEL] = `'${ctx.channel.id}`; // dạng chữ, không để Sheets làm tròn ID dài
@@ -395,8 +400,8 @@ export default class UngTuyen extends Cog {
       await ws.appendRow(line);
       console.log(`[UngTuyen] ${ctx.author.displayName} nhận dạy HV ${hv} (#${ctx.channel.name})`);
       return ctx.reply(
-        `🎓 ${ctx.author} đã **nhận dạy** học viên **${hv}** <@${t.userId}> lúc \`${now}\`.\n` +
-          `Dạy xong, cập nhật học viên lên **CSV** trong data rồi gõ \`/bangiao <momo>\` trong <#${ROOMS.BANGIAO}> để bàn giao cho Sở.`,
+        `🎓 ${ctx.author} đã **nhận dạy** học viên **${hv}**${momo ? ` (momo **${momo}**)` : ''} <@${t.userId}> lúc \`${now}\`.\n` +
+          `Dạy xong, cập nhật học viên lên **CSV** trong data rồi gõ \`/bangiao${momo ? ` ${momo}` : ' <momo>'}\` trong <#${ROOMS.BANGIAO}> để bàn giao cho Sở.`,
       );
     });
   }
@@ -413,13 +418,15 @@ export default class UngTuyen extends Cog {
     return /^(\d{6})-/.exec(this.bot.channels.cache.get(channelId)?.name ?? '')?.[1] ?? null;
   }
 
-  // /bangiao <momo> [mã đơn] trong kênh BANGIAO: chọn HV người gõ đang dạy (nhiều HV thì cần mã đơn),
+  // /bangiao [momo] [mã đơn] trong kênh BANGIAO: chọn HV người gõ đang dạy
+  //  - momo bỏ trống = dùng momo đã lưu lúc /nhanday; có momo thì chọn đúng HV có momo đó
+  //  - nhiều HV không phân biệt được thì cần mã đơn
   // momo phải đã là CSV trong GCPD HOME -> ghi giờ bàn giao + thông báo tag Sở ngay tại kênh BANGIAO
   async banGiao(ctx, momoArg, codeArg) {
     if (!(await this.guardBangiaoRoom(ctx))) return;
-    const momo = S(momoArg);
-    if (!/^\d+$/.test(momo)) {
-      return ctx.reply('⚠️ Cú pháp: `/bangiao <momo> [mã đơn]` (momo của CSV mới). Ví dụ: `/bangiao 12345` hoặc `/bangiao 12345 174118`');
+    const momoIn = S(momoArg);
+    if (momoIn && !/^\d+$/.test(momoIn)) {
+      return ctx.reply('⚠️ Cú pháp: `/bangiao [momo] [mã đơn]`. Ví dụ: `/bangiao`, `/bangiao 12345` hoặc `/bangiao 12345 174118`');
     }
     const code = S(codeArg);
     const codeChannel = /^<#(\d+)>$/.exec(code)?.[1] ?? (/^\d{17,20}$/.test(code) ? code : null); // nhận cả #kênh / ID kênh
@@ -437,6 +444,10 @@ export default class UngTuyen extends Cog {
           const ch = plainId(c.data[C.CHANNEL]);
           return codeChannel ? ch === codeChannel : this.ticketCode(ch) === code;
         });
+      } else if (momoIn) {
+        // Có momo: ưu tiên HV có đúng momo đã lưu (không ai khớp thì giữ nguyên danh sách)
+        const same = cands.filter((c) => plainId(c.data[C.MOMO]) === momoIn);
+        if (same.length) cands = same;
       }
       if (!cands.length) {
         return ctx.reply(
@@ -449,14 +460,19 @@ export default class UngTuyen extends Cog {
         const list = cands
           .map((c) => {
             const ch = plainId(c.data[C.CHANNEL]);
-            return `• **${S(c.data[C.HV])}** — mã đơn **${this.ticketCode(ch) ?? '?'}** <#${ch}>${admin ? ` (dạy: ${S(c.data[C.TEACHER])})` : ''}`;
+            const m = plainId(c.data[C.MOMO]);
+            return `• **${S(c.data[C.HV])}**${m ? ` — momo **${m}**` : ''} — mã đơn **${this.ticketCode(ch) ?? '?'}** <#${ch}>${admin ? ` (dạy: ${S(c.data[C.TEACHER])})` : ''}`;
           })
           .join('\n');
-        return ctx.reply(`⚠️ Đang dạy **${cands.length}** học viên, thêm mã đơn: \`/bangiao ${momo} <mã đơn>\`\n${list}`.slice(0, 1900));
+        return ctx.reply(`⚠️ Đang dạy **${cands.length}** học viên, gõ \`/bangiao <momo>\` hoặc \`/bangiao <momo> <mã đơn>\`:\n${list}`.slice(0, 1900));
       }
       const cur = cands[0];
       const teacherId = plainId(cur.data[C.TEACHER_ID]);
       const ticketId = plainId(cur.data[C.CHANNEL]);
+      const momo = momoIn || plainId(cur.data[C.MOMO]);
+      if (!momo) {
+        return ctx.reply(`⚠️ Hồ sơ của **${S(cur.data[C.HV])}** không có momo. Gõ \`/bangiao <momo>\` (momo của CSV mới).`);
+      }
 
       // Kiểm tra data: momo đã lên CSV chưa
       const { csv, any } = await this.lookupData(momo);
@@ -596,7 +612,7 @@ export default class UngTuyen extends Cog {
         },
         {
           name: `🎓 Đang dạy (${teaching.length})`,
-          value: block(teaching.map((r) => `• **${S(r[C.HV])}** — **${S(r[C.TEACHER])}** nhận dạy từ \`${S(r[C.TAKEN])}\``), '*Không có*'),
+          value: block(teaching.map((r) => `• **${S(r[C.HV])}** (momo ${plainId(r[C.MOMO])}) — **${S(r[C.TEACHER])}** nhận dạy từ \`${S(r[C.TAKEN])}\``), '*Không có*'),
         },
         {
           name: `✅ Đã nhận bàn giao (10 gần nhất)`,

@@ -74,7 +74,7 @@ export const SLASH_META = {
   // ungtuyen
   ungtuyenpanel: { desc: 'Đặt bảng nút "Nộp đơn" ứng tuyển PD vào kênh này (PD bot admin)', args: null },
   nhanday: { desc: 'Nhận dạy học viên (gõ trong kênh đơn ứng tuyển)', args: null, ephemeral: true }, // trả lời chỉ người gõ thấy
-  bangiao: { desc: 'Dạy xong, bàn giao CSV mới cho Sở (chỉ dùng trong kênh BANGIAO)', args: '<momo> [mã đơn] — mã đơn 6 số khi đang dạy nhiều HV', required: true },
+  bangiao: { desc: 'Dạy xong, bàn giao CSV mới cho Sở (chỉ dùng trong kênh BANGIAO)', args: '[momo] [mã đơn] — bỏ trống = momo đã lưu lúc /nhanday' },
   nhanbangiao: { desc: 'Sở nhận bàn giao CSV mới (chỉ dùng trong kênh BANGIAO)', args: '[momo] — bỏ trống nếu chỉ có 1 bàn giao đang chờ' },
   dsbangiao: { desc: 'Danh sách đang dạy / chờ Sở nhận / đã nhận bàn giao', args: null },
 };
