@@ -118,8 +118,32 @@ export default class LogNhanSu extends Cog {
     }
   }
 
+  // OFF DUTY = hết phiên đàm: quên đàm đang nhớ (trừ khi log đàm mới hơn lúc OFF).
+  // Không làm vậy thì người vào đàm rồi thoát game (không có log "Rời kênh") sẽ bị gán lại đàm cũ ở lần ON DUTY sau.
+  forgetRadioOnOff(latestDuty, times) {
+    let changed = false;
+    for (const [pid, status] of latestDuty) {
+      if (status !== ' ') continue;
+      const offAt = new Date(times.get(pid)?.time ?? Date.now());
+      const last = this.lastRadioActions[pid];
+      if (last && last.val !== ' ' && new Date(last.time) <= offAt) {
+        this.lastRadioActions[pid] = { val: ' ', time: offAt };
+        changed = true;
+      }
+    }
+    if (changed) this.saveMemory();
+  }
+
+  // Đàm khôi phục khi ON DUTY: chỉ dùng đàm nhớ được trong 12 tiếng gần nhất (phòng khi thiếu cả log OFF DUTY)
+  restorableRadio(pid) {
+    const last = this.lastRadioActions[pid];
+    if (!last || Date.now() - new Date(last.time).getTime() > 12 * HOUR_MS) return ' ';
+    return last.val ?? ' ';
+  }
+
   // Ghi trạng thái Duty/Radio mới nhất lên sheet Online (dùng chung cho bus 10s và radar 5 phút)
   async applyToSheet(latestDuty, latestRadio, newOfficers) {
+    this.forgetRadioOnOff(latestDuty, newOfficers);
     const allRows = await this.bot.sheets.online.getAllValues();
     const cells = [];
     const existing = new Set();
@@ -139,7 +163,7 @@ export default class LogNhanSu extends Cog {
       let targetRadio;
       if (curDuty === ' ') targetRadio = ' ';
       else if (latestRadio.has(pid)) targetRadio = latestRadio.get(pid);
-      else if (latestDuty.has(pid) && curDuty === 'Đang Onduty') targetRadio = this.lastRadioActions[pid]?.val ?? ' ';
+      else if (latestDuty.has(pid) && curDuty === 'Đang Onduty') targetRadio = this.restorableRadio(pid);
       else targetRadio = oldRadio;
 
       if (targetRadio !== oldRadio) cells.push(cell(idx + 1, 9, targetRadio));
@@ -306,7 +330,7 @@ export default class LogNhanSu extends Cog {
         if (newDuty === ' ') {
           if (oldRadio !== ' ') cells.push(cell(idx + 1, 9, ' '));
         } else if (newDuty === 'Đang Onduty') {
-          const restored = this.lastRadioActions[pid]?.val ?? ' ';
+          const restored = this.restorableRadio(pid);
           if (restored !== ' ' && restored !== oldRadio) cells.push(cell(idx + 1, 9, restored));
         }
       });
