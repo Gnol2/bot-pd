@@ -1,12 +1,14 @@
 // Kiểm tra nhanh: import + khởi tạo mọi module với bot giả (không kết nối Discord / Google)
 import fs from 'node:fs';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cogDir = path.join(root, 'src', 'cogs');
 
-const fakeBot = { readyPromise: new Promise(() => {}), user: { id: '0' }, channels: { cache: new Map() } };
+// Bot giả: có on/off như discord.js Client (module nghe interaction/sự kiện cần), vòng lặp không chạy
+const fakeBot = Object.assign(new EventEmitter(), { readyPromise: new Promise(() => {}), user: { id: '0' }, channels: { cache: new Map() } });
 let failed = 0;
 
 for (const file of fs.readdirSync(cogDir).filter((f) => f.endsWith('.js'))) {
@@ -14,7 +16,7 @@ for (const file of fs.readdirSync(cogDir).filter((f) => f.endsWith('.js'))) {
     const mod = await import(pathToFileURL(path.join(cogDir, file)).href);
     const cog = new mod.default(fakeBot);
     const cmds = Object.keys(cog.commands);
-    console.log(`✅ ${file.padEnd(24)} lệnh: ${cmds.length ? cmds.map((c) => '!' + c).join(', ') : '(không có)'}${cog.onMessage ? ' | có listener' : ''}`);
+    console.log(`✅ ${file.padEnd(24)} lệnh: ${cmds.length ? cmds.map((c) => '/' + c).join(', ') : '(không có)'}${cog.onMessage ? ' | có listener' : ''}`);
     cog.unload();
   } catch (e) {
     failed++;

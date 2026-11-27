@@ -11,7 +11,7 @@ export const SHEET_IDS = {
   HOME: '1WiN4rD5YEyQLHyCbShYnvvSPHqRI0K6drdlcbhZjB9U', // GCPD HOME, Dispatch
   PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng
   LUONG: '1BaGq__14HqVT8VcSsP2ZGH0kmuQEsIm4TKkNiQCjDHc', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
-  LUAT: '1uLpKViLYlzhyBDO7lzoNydiWr77WO3WAkRBypFbVP0I', // "Tội phạm phải đọc" (tab luatpd): Nghề | Chi tiết | Link — dùng cho /luat
+  LUAT: '1uLpKViLYlzhyBDO7lzoNydiWr77WO3WAkRBypFbVP0I', // "Tội phạm phải đọc" (tab luatpd + tricklobicam) — /ai tra cứu từ file này
 };
 
 // ==========================================
@@ -96,6 +96,5 @@ export const COGS = [
   'log_nhansu',
   'dangky_ca',
   'cham_cong',
-  'luat',
   'ai', // Trợ lý luật Gemini (/ai), chuyển từ bot "PD AI" cũ. Cần GEMINI_API_KEY trong .env
 ];

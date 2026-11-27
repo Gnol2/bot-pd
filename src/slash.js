@@ -29,8 +29,6 @@ export const SLASH_META = {
   no: { desc: 'Xác nhận chưa thu được GPLMB', args: '<momo>', required: true },
   kiemtra: { desc: 'Kiểm tra GPLMB', args: '<momo>', required: true },
 
-  // luat
-  luat: { desc: 'Tra cứu luật GCPD', args: '[mã | từ khóa] (bỏ trống = danh sách)' },
 
   // log_hoadon_113
   quetdulieu: { desc: 'Quét lịch sử hóa đơn vào sheet', args: '[momo] DD/MM/YYYY-DD/MM/YYYY', required: true },
@@ -93,7 +91,6 @@ export const COG_LABELS = {
   log_hoadon_113: '🧾 Hóa đơn 113',
   check_dam: '📻 Đàm / 113',
   dispatch: '📡 Dispatch',
-  luat: '📚 Luật',
   ungtuyen: '📝 Ứng tuyển PD',
   ai: '🤖 Trợ lý luật AI',
   log_handcuff: '🔗 Còng tay',
