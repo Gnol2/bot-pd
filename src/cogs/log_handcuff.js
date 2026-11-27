@@ -1,5 +1,6 @@
 import { Cog } from '../core/Cog.js';
-import { ROOMS, SHEET_IDS, alertRoom } from '../config.js';
+import { ROOMS, SHEET_IDS } from '../config.js';
+import { sendViolation } from '../violation.js';
 import { S, fmt, toVN, vnToUtc, parseDMY, addMs, hasRole, history, isBotAdmin, NO_PERM } from '../utils.js';
 
 const COP_RE = /Cảnh sát:\s*(.*?)\s*\(\s*ID:\s*(\d+)\s*\)/i;
@@ -70,31 +71,28 @@ export default class LogHandcuff extends Cog {
         }
 
         const infoY = targetRow
-          ? `Cảnh sát **${targetRow[1]} | ${targetId} | ${targetRow[3]}**`
-          : `Người dân **${targetName} | ${targetId}**`;
+          ? `Cảnh sát ${targetRow[1]} | ${targetRow[3]} (ID: ${targetId})`
+          : `Người dân ${targetName} (ID: ${targetId})`;
+        const time = toVN(message.createdAt);
 
         if (!copRow) {
-          const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_NGOAI'));
-          if (alert) {
-            await alert.send(
-              `🚨 **NGƯỜI NGOÀI PD DÙNG CÒNG TAY**\n` +
-                `Người còng: **${copName} | ${copId}** (không có trong danh sách PD)\n` +
-                `Bị còng: ${infoY}`,
-            );
-          }
+          await sendViolation(
+            this.bot,
+            'CONG_NGOAI',
+            { 'Người còng': `${copName} (ID: ${copId})`, 'Đã còng': infoY, 'Ghi chú': 'Không có trong danh sách PD' },
+            { time },
+          );
           continue;
         }
 
         const copDuty = S(copRow[7]);
         if (copDuty === '') {
-          const alert = this.bot.channels.cache.get(alertRoom('VP_CONG_OFFDUTY'));
-          if (alert) {
-            await alert.send(
-              `🚨 **CÒNG TAY KHI OFF DUTY**\n` +
-                `Cảnh sát: **${copRow[1]} | ${copId} | ${copRow[3]}** (OFF DUTY)\n` +
-                `Bị còng: ${infoY}`,
-            );
-          }
+          await sendViolation(
+            this.bot,
+            'CONG_OFFDUTY',
+            { 'Cảnh sát': `${copRow[1]} | ${copRow[3]} (ID: ${copId})`, 'Đã còng': infoY, 'Trạng thái': 'OFF DUTY' },
+            { time },
+          );
         }
       }
     } catch (e) {

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { Cog } from '../core/Cog.js';
-import { ROOMS, alertRoom } from '../config.js';
+import { ROOMS } from '../config.js';
+import { sendViolation } from '../violation.js';
 import { S, cell, fmt, toVN, nowVN, vnToUtc, endOfDay, parseDMY, addMs, HOUR_MS, hasRole, roleMention, history, cleanRadio, isBotAdmin, NO_PERM } from '../utils.js';
 
 const MEMORY_FILE = 'nhansu_radio_memory.json';
@@ -99,9 +100,6 @@ export default class LogNhanSu extends Cog {
   // CÒI BÁO ĐỘNG SĨ QUAN LẠ
   // ==========================================
   async alertUnknownOfficers(latestDuty, existingPids, newOfficers) {
-    const vp = this.bot.channels.cache.get(alertRoom('VP_MOMO_LA'));
-    if (!vp) return;
-    const pings = `${roleMention(vp.guild, 'Sở Trưởng Cảnh Sát')} ${roleMention(vp.guild, 'Sở Phó Cảnh Sát')}`;
     const now = Date.now();
 
     for (const [pid, status] of latestDuty) {
@@ -111,9 +109,11 @@ export default class LogNhanSu extends Cog {
       this.alertedUnknownPids.set(pid, now);
 
       const t = newOfficers.get(pid)?.time;
-      const timeStr = fmt(t ? toVN(t) : nowVN(), 'HH:mm:ss DD/MM/YYYY');
-      await vp.send(
-        `🚨 **MOMO LẠ ON DUTY** ${pings}\nMomo: **${pid}** (không có trong danh sách cảnh sát)\nThời gian: **${timeStr}**`,
+      await sendViolation(
+        this.bot,
+        'MOMO_LA',
+        { Momo: pid, 'Trạng thái': 'Đang OnDuty', 'Ghi chú': 'Không có trong danh sách cảnh sát' },
+        { time: t ? toVN(t) : nowVN(), pingSo: true },
       );
     }
   }

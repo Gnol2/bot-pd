@@ -7,8 +7,8 @@ export const BOT_ADMIN_ROLE = 'PD bot admin';
 // GOOGLE SPREADSHEET IDs
 // ==========================================
 export const SHEET_IDS = {
-  MAIN: '1cACYuhMuPsnJ1KybdMYZBDajMYI0mdw6clwu-O1yyI4', // File chính "GCPD DATA" (Online, Hoa-Don, Incident, tab KPI tuần...)
-  HOME: '1UA2yZ8ABugG9ualMmm-ON-MHVlaQM_jrzPHNqejZ4Vg', // GCPD HOME, Dispatch
+  MAIN: '1e_TIX1_MSlVKtt1TIV3GEhUY4juOpGPe6Wwptpkt-yY', // File chính "GCPD DATA" (Online, Hoa-Don, Incident, tab KPI tuần...)
+  HOME: '1WiN4rD5YEyQLHyCbShYnvvSPHqRI0K6drdlcbhZjB9U', // GCPD HOME, Dispatch
   PHONGVAN: '18sRWnDVttvBC26iKukbwgBgoEEQLCh4GhAavIIz0DDI', // Form tuyển dụng
   LUONG: '1BaGq__14HqVT8VcSsP2ZGH0kmuQEsIm4TKkNiQCjDHc', // File Lương GCPD: tab tuần "d/m-d/m", bot ghi giờ ON-OFF vào cột E..K
   LUAT: '1uLpKViLYlzhyBDO7lzoNydiWr77WO3WAkRBypFbVP0I', // "Tội phạm phải đọc" (tab luatpd): Nghề | Chi tiết | Link — dùng cho /luat
@@ -41,11 +41,8 @@ export const ROOMS = {
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
 
-  // Kênh riêng cho từng loại cảnh báo vi phạm. Để trống '' = gửi vào VI_PHAM như cũ.
-  VP_MOMO_LA: '1575492565061337170', // Momo lạ vừa OnDuty (log_nhansu)
-  VP_CONG_NGOAI: '1575492658552504430', // Người ngoài danh sách dùng còng tay (log_handcuff)
-  VP_CONG_OFFDUTY: '1575492777276342373', // Cảnh sát OFF DUTY dùng còng tay (log_handcuff)
-  VP_SUA_MDT: '1575493029014413443', // Chỉnh sửa MDT trái phép (log_incident)
+  // Momo lạ OnDuty, người ngoài dùng còng, còng khi OFF DUTY, sửa MDT trái phép: gửi chung vào VI_PHAM,
+  // mỗi loại 1 màu (xem src/violation.js)
   VP_DAM: '1575493093736710154', // Danh sách vi phạm đàm cuối ngày (check_dam)
 };
 

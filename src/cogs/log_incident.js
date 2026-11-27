@@ -1,6 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
-import { ROOMS, alertRoom } from '../config.js';
+import { ROOMS } from '../config.js';
+import { sendViolation } from '../violation.js';
 import {
   S, cell, fmt, toVN, nowVN, vnToUtc, addMs, HOUR_MS, endOfDay, parseDMY, parseYMDHMS, uniq, hasRole, roleMention, callsignOf, history, sanitizeVal, COLORS, isBotAdmin, NO_PERM,
 } from '../utils.js';
@@ -85,35 +86,20 @@ export default class LogIncident extends Cog {
       this.alertedKeys.add(key);
       if (this.alertedKeys.size > 500) this.alertedKeys.clear();
 
-      const vpId = alertRoom('VP_SUA_MDT');
-      const vp = this.bot.channels.cache.get(vpId);
-      if (!vp) return console.error(`[Incident] LỖI: không thấy kênh cảnh báo sửa MDT (${vpId})`);
-
-      const guild = vp.guild;
+      const guild = this.bot.channels.cache.get(ROOMS.VI_PHAM)?.guild;
       const violator = this.resolveViolatorMention(guild, nguoiThucHien);
-      const pingParts = [roleMention(guild, 'Sở Trưởng Cảnh Sát'), roleMention(guild, 'Sở Phó Cảnh Sát')];
-      if (violator) pingParts.push(violator);
 
-      let performer = `**${nguoiThucHien}**`;
-      if (violator) performer += ` (${violator})`;
-
-      const embed = new EmbedBuilder()
-        .setTitle('Sửa MDT không phải của mình')
-        .setDescription('Người sửa không phải tác giả MDT.')
-        .setColor(COLORS.red)
-        .addFields(
-          { name: 'Người sửa', value: performer, inline: false },
-          { name: 'Tác giả', value: `**${tacGiaFull || 'Không rõ'}**`, inline: false },
-          { name: 'MDT', value: `**#${incId}**` + (tieuDe ? ` (${tieuDe})` : ''), inline: true },
-          { name: 'Thời gian', value: `\`${ts}\``, inline: true },
-        )
-        .setFooter({ text: 'Giám sát MDT tự động' });
-
-      await vp.send({
-        content: `🚨 **SỬA MDT TRÁI PHÉP** ${pingParts.join(' ')}`,
-        embeds: [embed],
-        allowedMentions: { parse: ['roles', 'users'] },
-      });
+      await sendViolation(
+        this.bot,
+        'SUA_MDT',
+        {
+          'Người sửa': `${nguoiThucHien}${violator ? ` (${violator})` : ''}`,
+          'Tác giả': tacGiaFull || 'Không rõ',
+          MDT: `#${incId}${tieuDe ? ` (${tieuDe})` : ''}`,
+          'Ghi chú': 'Người sửa không phải tác giả MDT',
+        },
+        { time: String(ts ?? '').replace(/'/g, ''), pingSo: true, pings: violator ? [violator] : [] },
+      );
     } catch (e) {
       console.error('[Incident] LỖI gửi cảnh báo sửa MDT:', e.message);
     }
