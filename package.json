@@ -9,9 +9,10 @@
     "check": "node scripts/check.js"
   },
   "engines": {
-    "node": ">=18.17"
+    "node": ">=22"
   },
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
     "googleapis": "^144.0.0"

@@ -71,6 +71,9 @@ export const SLASH_META = {
   kpi: { desc: 'Xem KPI', args: '[momo] [tuần] — vd: 12345 31/8-6/9' },
   lamviec: { desc: 'Ping Sĩ quan 0 KPI tuần này', args: null },
 
+  // ai
+  ai: { desc: 'Hỏi trợ lý luật GTA (AI, tra từ Google Sheet luật)', args: '<câu hỏi> — vd: cướp ngân hàng phạt bao nhiêu', required: true },
+
   // ungtuyen
   ungtuyenpanel: { desc: 'Đặt bảng nút "Nộp đơn" ứng tuyển PD vào kênh này (PD bot admin)', args: null },
   nhanday: { desc: 'Nhận dạy học viên (gõ trong kênh đơn ứng tuyển)', args: null, ephemeral: true }, // trả lời chỉ người gõ thấy
@@ -92,6 +95,7 @@ export const COG_LABELS = {
   dispatch: '📡 Dispatch',
   luat: '📚 Luật',
   ungtuyen: '📝 Ứng tuyển PD',
+  ai: '🤖 Trợ lý luật AI',
   log_handcuff: '🔗 Còng tay',
   hoadon: '🧾 Quét bù dữ liệu',
   hoadonbv: '🧾 Quét bù dữ liệu',

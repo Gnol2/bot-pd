@@ -40,6 +40,7 @@ export const ROOMS = {
 
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
+  AI: '1572130947216838756', // Kênh trợ lý luật: /ai hoặc @tag bot (module ai)
 
   // Momo lạ OnDuty, người ngoài dùng còng, còng khi OFF DUTY, sửa MDT trái phép: gửi chung vào VI_PHAM,
   // mỗi loại 1 màu (xem src/violation.js)
@@ -96,4 +97,5 @@ export const COGS = [
   'dangky_ca',
   'cham_cong',
   'luat',
+  'ai', // Trợ lý luật Gemini (/ai), chuyển từ bot "PD AI" cũ. Cần GEMINI_API_KEY trong .env
 ];
