@@ -69,7 +69,7 @@ export const UNG_TUYEN = {
 export const alertRoom = (key) => ROOMS[key] || ROOMS.VI_PHAM;
 
 export const FIREBASE_URL =
-  'https://dispatch-gcpd-default-rtdb.asia-southeast1.firebasedatabase.app/latest_dispatch.json';
+  'https://dispatch-gcpd-default-rtdb.asia-southeast1.firebasedatabase.app/new_dispatch.json';
 
 // Các module tự load khi khởi động (giống cogs_list trong main.py).
 // hoadonbv có file nhưng không có trong danh sách gốc -> bật bằng lệnh `/load hoadonbv`.
