@@ -242,7 +242,7 @@ export default class UngTuyen extends Cog {
       .setTitle('📝 Hồ sơ ứng tuyển GCPD')
       .setColor(COLORS.green)
       .setThumbnail(user.displayAvatarURL())
-      .setDescription(`Ứng viên: ${user} (\`${user.username}\` · ID \`${user.id}\`)\nNộp lúc: **${fmt(nowVN(), 'HH:mm DD/MM/YYYY')}**`)
+      .setDescription(`Ứng viên: ${user} \nNộp lúc: **${fmt(nowVN(), 'HH:mm DD/MM/YYYY')}**`)
       .setFooter({ text: 'Hệ thống Tuyển dụng GCPD' });
     // Mỗi thông tin 1 dòng riêng (không xếp cột). hvName() đọc lại field "Tên Ingame" nên giữ đúng tên field.
     for (const f of FIELDS) {
@@ -476,8 +476,6 @@ export default class UngTuyen extends Cog {
       this.lastRemind.set(ticketId, Date.now());
       console.log(`[UngTuyen] ${ctx.author.displayName} bàn giao CSV mới ${csv.name} (momo ${momo}) cho Sở`);
 
-      // Báo trong kênh đơn (nếu còn), thông báo chính (tag Sở) là câu trả lời lệnh ngay tại kênh BANGIAO
-      this.bot.channels.cache.get(ticketId)?.send(`📤 ${ctx.author} đã **bàn giao** học viên cho Sở lúc \`${now}\` (xem <#${ROOMS.BANGIAO}>).`).catch(() => {});
       return ctx.reply(
         this.handoverPayload(ctx.guild, { momo, csv, hv: S(cur.data[C.HV]), teacherId, teacherCs: S(cur.data[C.TEACHER]), at: now, channelId: ticketId }),
       );
@@ -539,8 +537,6 @@ export default class UngTuyen extends Cog {
       this.lastRemind.delete(channelId);
       console.log(`[UngTuyen] ${ctx.author.displayName} nhận bàn giao momo ${tMomo}`);
 
-      const ticket = this.bot.channels.cache.get(channelId);
-      ticket?.send(`✅ ${ctx.author} (Sở) đã **nhận bàn giao** lúc \`${now}\`. Có thể đóng ticket.`).catch(() => {});
       return ctx.reply(
         `✅ ${ctx.author} đã **nhận bàn giao** CSV mới **${S(target.data[C.HV])}** (momo **${tMomo}**) từ ${teacherId ? `<@${teacherId}>` : `**${S(target.data[C.TEACHER])}**`} lúc \`${now}\`.`,
       );

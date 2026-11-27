@@ -200,9 +200,19 @@ function makeInteractionCtx(interaction, name, argStr) {
   let first = true;
   const echo = argStr ? `\`/${name} ${argStr}\`` : '';
 
+  const ephemeral = !!SLASH_META[name]?.ephemeral;
+
   const respond = async (content) => {
     const payload = typeof content === 'string' ? { content } : { ...content };
     try {
+      // Lệnh trả lời ẩn: chỉ người gõ thấy, không ping ai -> sửa tin đầu, các tin sau cũng ẩn
+      if (ephemeral) {
+        if (first) {
+          first = false;
+          return await interaction.editReply(payload);
+        }
+        return await interaction.followUp({ ...payload, flags: MessageFlags.Ephemeral });
+      }
       if (first) {
         first = false;
         // Sửa tin nhắn thì Discord không ping -> nội dung có tag phải là tin MỚI.
@@ -219,6 +229,8 @@ function makeInteractionCtx(interaction, name, argStr) {
       }
       return await interaction.followUp(payload);
     } catch (e) {
+      // Lệnh trả lời ẩn: không gửi vào kênh (sẽ lộ công khai)
+      if (ephemeral) return console.warn(`[Lệnh] /${name}: phản hồi ẩn lỗi (${e.message})`);
       // Token interaction hết hạn (lệnh chạy > 15 phút) -> gửi thẳng vào kênh
       console.warn(`[Lệnh] /${name}: phản hồi interaction lỗi (${e.message}), gửi vào kênh`);
       return interaction.channel.send(payload);
@@ -285,7 +297,8 @@ bot.on(Events.InteractionCreate, async (interaction) => {
 
   // Phải phản hồi trong 3 giây -> báo "đang xử lý" trước, lệnh đọc Sheets xong mới trả kết quả
   try {
-    await interaction.deferReply();
+    // Lệnh có ephemeral: true trong slash.js -> mọi câu trả lời chỉ người gõ thấy
+    await interaction.deferReply(SLASH_META[name]?.ephemeral ? { flags: MessageFlags.Ephemeral } : {});
   } catch (e) {
     return console.error(`[Lệnh] LỖI defer /${name}:`, e.message);
   }
