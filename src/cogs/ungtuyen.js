@@ -84,7 +84,7 @@ export default class UngTuyen extends Cog {
     this.commands = {
       ungtuyenpanel: (ctx) => this.postPanel(ctx),
       nhanday: (ctx) => this.nhanDay(ctx),
-      bangiao: (ctx, momo) => this.banGiao(ctx, momo),
+      bangiao: (ctx, momo, code) => this.banGiao(ctx, momo, code),
       nhanbangiao: (ctx, momo) => this.nhanBanGiao(ctx, momo),
       dsbangiao: (ctx) => this.dsBanGiao(ctx),
     };
@@ -280,8 +280,7 @@ export default class UngTuyen extends Cog {
 
     await ch.send({
       content:
-        `${i.user} ${reviewers.map((r) => r.toString()).join(' ')}\n📥 **Đơn ứng tuyển mới.** Ban tuyển dụng sẽ xem đơn và liên hệ bạn tại kênh này.\n` +
-        `-# FTO nhận dạy: gõ \`/nhanday\` · Dạy xong (đã lên CSV trong data): \`/bangiao <momo>\` để bàn giao cho Sở`,
+        `${i.user} ${reviewers.map((r) => r.toString()).join(' ')}\n📥 **Đơn ứng tuyển mới.** Ban tuyển dụng sẽ xem đơn và liên hệ bạn tại kênh này.\n`,
       embeds: [this.applicationEmbed(i.user, answers)],
       components: [row(btn('close', 'Đóng ticket', ButtonStyle.Secondary, '🔒'))],
       allowedMentions: { users: [i.user.id], roles: reviewers.map((r) => r.id) },
@@ -397,27 +396,67 @@ export default class UngTuyen extends Cog {
       console.log(`[UngTuyen] ${ctx.author.displayName} nhận dạy HV ${hv} (#${ctx.channel.name})`);
       return ctx.reply(
         `🎓 ${ctx.author} đã **nhận dạy** học viên **${hv}** <@${t.userId}> lúc \`${now}\`.\n` +
-          `Dạy xong, cập nhật học viên lên **CSV** trong data rồi gõ \`/bangiao <momo>\` để bàn giao cho Sở.`,
+          `Dạy xong, cập nhật học viên lên **CSV** trong data rồi gõ \`/bangiao <momo>\` trong <#${ROOMS.BANGIAO}> để bàn giao cho Sở.`,
       );
     });
   }
 
-  // /bangiao <momo>: momo phải đã là CSV trong GCPD HOME -> ghi giờ bàn giao + báo Sở ở kênh BANGIAO
-  async banGiao(ctx, momoArg) {
-    const t = this.ticketInfo(ctx.channel);
-    if (!t) return ctx.reply('⚠️ Lệnh này chỉ dùng trong kênh đơn ứng tuyển.');
+  // /bangiao, /nhanbangiao chỉ dùng trong kênh BANGIAO
+  async guardBangiaoRoom(ctx) {
+    if (ctx.channel?.id === ROOMS.BANGIAO) return true;
+    await ctx.reply(`⚠️ Lệnh này chỉ dùng trong <#${ROOMS.BANGIAO}>.`);
+    return false;
+  }
+
+  // Mã đơn = 6 số đầu tên kênh đơn (vd "174118-nguyen-van-a"); kênh đã xoá/kênh cũ -> null
+  ticketCode(channelId) {
+    return /^(\d{6})-/.exec(this.bot.channels.cache.get(channelId)?.name ?? '')?.[1] ?? null;
+  }
+
+  // /bangiao <momo> [mã đơn] trong kênh BANGIAO: chọn HV người gõ đang dạy (nhiều HV thì cần mã đơn),
+  // momo phải đã là CSV trong GCPD HOME -> ghi giờ bàn giao + thông báo tag Sở ngay tại kênh BANGIAO
+  async banGiao(ctx, momoArg, codeArg) {
+    if (!(await this.guardBangiaoRoom(ctx))) return;
     const momo = S(momoArg);
-    if (!/^\d+$/.test(momo)) return ctx.reply('⚠️ Cú pháp: `/bangiao <momo>` (momo của CSV mới). Ví dụ: `/bangiao 12345`');
+    if (!/^\d+$/.test(momo)) {
+      return ctx.reply('⚠️ Cú pháp: `/bangiao <momo> [mã đơn]` (momo của CSV mới). Ví dụ: `/bangiao 12345` hoặc `/bangiao 12345 174118`');
+    }
+    const code = S(codeArg);
+    const codeChannel = /^<#(\d+)>$/.exec(code)?.[1] ?? (/^\d{17,20}$/.test(code) ? code : null); // nhận cả #kênh / ID kênh
 
     return this.teachLock.run(async () => {
       const { ws, rows } = await this.teachSheet();
-      const cur = this.findTeach(rows, ctx.channel.id);
-      if (!cur) return ctx.reply('⚠️ Chưa ai nhận dạy học viên này. FTO gõ `/nhanday` trước.');
-      if (S(cur.data[C.HANDED])) return ctx.reply(`⚠️ Đã bàn giao cho Sở lúc \`${cur.data[C.HANDED]}\`.`);
-      const teacherId = plainId(cur.data[C.TEACHER_ID]);
-      if (teacherId !== ctx.author.id && !isBotAdmin(ctx.author)) {
-        return ctx.reply(`❌ Chỉ người nhận dạy (**${cur.data[C.TEACHER]}**) hoặc PD bot admin mới bàn giao được.`);
+      const admin = isBotAdmin(ctx.author);
+      // HV đang dạy (đã /nhanday, chưa bàn giao) của người gõ; admin thấy tất cả
+      let cands = [];
+      rows.forEach((r, k) => {
+        if (k > 0 && S(r[C.HV]) && !S(r[C.HANDED]) && (admin || plainId(r[C.TEACHER_ID]) === ctx.author.id)) cands.push({ row: k + 1, data: r });
+      });
+      if (code) {
+        cands = cands.filter((c) => {
+          const ch = plainId(c.data[C.CHANNEL]);
+          return codeChannel ? ch === codeChannel : this.ticketCode(ch) === code;
+        });
       }
+      if (!cands.length) {
+        return ctx.reply(
+          code
+            ? `⚠️ Không tìm thấy học viên mã đơn **${code}** mà bạn đang dạy (chưa bàn giao).`
+            : '⚠️ Bạn chưa nhận dạy học viên nào (hoặc đã bàn giao hết). FTO gõ `/nhanday` trong kênh đơn trước.',
+        );
+      }
+      if (cands.length > 1) {
+        const list = cands
+          .map((c) => {
+            const ch = plainId(c.data[C.CHANNEL]);
+            return `• **${S(c.data[C.HV])}** — mã đơn **${this.ticketCode(ch) ?? '?'}** <#${ch}>${admin ? ` (dạy: ${S(c.data[C.TEACHER])})` : ''}`;
+          })
+          .join('\n');
+        return ctx.reply(`⚠️ Đang dạy **${cands.length}** học viên, thêm mã đơn: \`/bangiao ${momo} <mã đơn>\`\n${list}`.slice(0, 1900));
+      }
+      const cur = cands[0];
+      const teacherId = plainId(cur.data[C.TEACHER_ID]);
+      const ticketId = plainId(cur.data[C.CHANNEL]);
 
       // Kiểm tra data: momo đã lên CSV chưa
       const { csv, any } = await this.lookupData(momo);
@@ -434,24 +473,19 @@ export default class UngTuyen extends Cog {
         { row: cur.row, col: C.HANDED + 1, value: `'${now}` },
         { row: cur.row, col: C.MOMO + 1, value: `'${momo}` },
       ]);
-      this.lastRemind.set(ctx.channel.id, Date.now());
-      console.log(`[UngTuyen] ${ctx.author.displayName} bàn giao CSV mới ${csv.name} (momo ${momo}) cho Sở (#${ctx.channel.name})`);
+      this.lastRemind.set(ticketId, Date.now());
+      console.log(`[UngTuyen] ${ctx.author.displayName} bàn giao CSV mới ${csv.name} (momo ${momo}) cho Sở`);
 
-      const sent = await this.postHandover(ctx.guild, { momo, csv, hv: S(cur.data[C.HV]), teacherId, teacherCs: S(cur.data[C.TEACHER]), at: now, channelId: ctx.channel.id });
+      // Báo trong kênh đơn (nếu còn), thông báo chính (tag Sở) là câu trả lời lệnh ngay tại kênh BANGIAO
+      this.bot.channels.cache.get(ticketId)?.send(`📤 ${ctx.author} đã **bàn giao** học viên cho Sở lúc \`${now}\` (xem <#${ROOMS.BANGIAO}>).`).catch(() => {});
       return ctx.reply(
-        `📤 ${ctx.author} đã **bàn giao** CSV mới **${csv.name}** (momo **${momo}**${csv.cs ? `, callsign **${csv.cs}**` : ''}) cho Sở lúc \`${now}\`.\n` +
-          (sent ? `Đã báo Sở Trưởng/Sở Phó tại <#${ROOMS.BANGIAO}>.` : '⚠️ Không gửi được thông báo vào kênh BANGIAO, báo Sở giúp.'),
+        this.handoverPayload(ctx.guild, { momo, csv, hv: S(cur.data[C.HV]), teacherId, teacherCs: S(cur.data[C.TEACHER]), at: now, channelId: ticketId }),
       );
     });
   }
 
-  // Thông báo bàn giao vào kênh BANGIAO (tag Sở)
-  async postHandover(guild, h) {
-    const ch = this.bot.channels.cache.get(ROOMS.BANGIAO);
-    if (!ch) {
-      console.error('[UngTuyen] LỖI: không thấy kênh BANGIAO');
-      return false;
-    }
+  // Thông báo bàn giao (tag Sở) để gửi trong kênh BANGIAO
+  handoverPayload(guild, h) {
     const so = this.soRoles(guild);
     const embed = new EmbedBuilder()
       .setTitle('📋 BÀN GIAO CẢNH SÁT VIÊN MỚI')
@@ -465,21 +499,16 @@ export default class UngTuyen extends Cog {
         { name: '📁 Kênh đơn', value: `<#${h.channelId}>`, inline: true },
       )
       .setFooter({ text: `Sở gõ /nhanbangiao ${h.momo} để nhận bàn giao` });
-    return ch
-      .send({
-        content: `${so.map((r) => r.toString()).join(' ')} vui lòng **nhận bàn giao cảnh sát viên mới**.`,
-        embeds: [embed],
-        allowedMentions: { roles: so.map((r) => r.id) },
-      })
-      .then(() => true)
-      .catch((e) => {
-        console.error('[UngTuyen] LỖI gửi thông báo bàn giao:', e.message);
-        return false;
-      });
+    return {
+      content: `${so.map((r) => r.toString()).join(' ')} vui lòng **nhận bàn giao cảnh sát viên mới**.`,
+      embeds: [embed],
+      allowedMentions: { roles: so.map((r) => r.id) },
+    };
   }
 
-  // /nhanbangiao [momo]: Sở nhận bàn giao -> ghi callsign + thời gian nhận
+  // /nhanbangiao [momo] trong kênh BANGIAO: Sở nhận bàn giao -> ghi callsign + thời gian nhận
   async nhanBanGiao(ctx, momoArg) {
+    if (!(await this.guardBangiaoRoom(ctx))) return;
     if (!this.isSo(ctx.author) && !isBotAdmin(ctx.author)) {
       return ctx.reply(`❌ Chỉ ${UNG_TUYEN.SO_ROLES.join(', ')} hoặc PD bot admin mới nhận bàn giao được.`);
     }
@@ -489,7 +518,6 @@ export default class UngTuyen extends Cog {
       const pending = this.pendingHandovers(rows);
       let target = null;
       if (momo) target = pending.find((p) => plainId(p.data[C.MOMO]) === momo);
-      else if (this.ticketInfo(ctx.channel)) target = pending.find((p) => plainId(p.data[C.CHANNEL]) === ctx.channel.id);
       else if (pending.length === 1) target = pending[0];
 
       if (!target) {
@@ -572,7 +600,7 @@ export default class UngTuyen extends Cog {
         },
         {
           name: `🎓 Đang dạy (${teaching.length})`,
-          value: block(teaching.map((r) => `• **${S(r[C.HV])}** — **${S(r[C.TEACHER])}** nhận \`${S(r[C.TAKEN])}\` <#${plainId(r[C.CHANNEL])}>`), '*Không có*'),
+          value: block(teaching.map((r) => `• **${S(r[C.HV])}** — **${S(r[C.TEACHER])}** nhận dạy từ \`${S(r[C.TAKEN])}\``), '*Không có*'),
         },
         {
           name: `✅ Đã nhận bàn giao (10 gần nhất)`,
