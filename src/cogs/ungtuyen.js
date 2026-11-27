@@ -77,6 +77,46 @@ const PAGES = [
 ];
 const FIELDS = PAGES.flat();
 
+// Điều khoản ứng viên phải đồng ý ở bước cuối trước khi nộp đơn (mỗi mục 1 field, tối đa 1024 ký tự/field)
+const TERMS = [
+  [
+    '🔹 Từ khi bắt đầu làm Học Viên',
+    'Trong vòng **2 tuần** kể từ ngày gia nhập lực lượng GCPD làm học viên **BẮT BUỘC PHẢI HOÀN THÀNH KHÓA HỌC** và thi đậu lên Cảnh Sát Viên. ' +
+      'Nếu trong khoảng thời gian này **không hoàn thành khóa học và không thi đậu lên làm Cảnh Sát Viên**, **TỰ Ý RỜI NGÀNH** hoặc viết **ĐƠN XIN RỜI NGÀNH** ' +
+      'lập tức sẽ bị phạt Ticket hóa đơn **500.000 IC** (bắt buộc phải thanh toán trong vòng 24h) và **Blacklist toàn ngành**. ' +
+      'Học viên vắng mặt 3 ngày không xin phép, không có buổi học nào sẽ bị phạt Ticket hóa đơn **100.000 IC** (thanh toán trong vòng 24h). ' +
+      'Bị phạt nhưng không thanh toán trong vòng 24 giờ thì phía Cảnh Sát sẽ gởi qua Tòa Thị Chính xử lý.',
+  ],
+  [
+    '🔹 Khi đã là Học Viên',
+    'Mỗi khi vào thành phố sẽ phải trình diện tại **Trụ Sở PD 723** hoặc **Trụ sở PD 217** để gặp Giảng Viên và học. ' +
+      'Nếu không có Giảng Viên trong thời gian đó thì phải ở đồn PD 723 hỗ trợ người dân hoặc có thể đi theo Cảnh sát viên khác học hỏi ' +
+      '(tuyệt đối không tham gia bất cứ tình huống nào khi đi chung với CSV - không xuống xe tham gia tình huống). ' +
+      '**Tuyệt đối không thử và sử dụng bất cứ chức năng ngành nào đối với bất kì ai, không lái xe ngành với mọi lý do.**',
+  ],
+  [
+    '🔹 Khi đã là Học Viên',
+    'Trong thời gian là học viên không được làm nghề bẩn, đi đánh chém hỗ trợ các GANG, chỉ được cho phép tham gia Thính. ' +
+      'Khi bận OC phải Offduty và cởi đồ học viên ra, bận làm việc riêng không học phải Offduty. ' +
+      'Phải dành trọn thời gian khi vào Thành phố chỉ để học và thi lên Cảnh Sát viên trong thời gian nhanh nhất có thể (có thể hoàn thành khóa học trong 1 ngày).',
+  ],
+  [
+    '🔹 Khi đã là Cảnh Sát Viên',
+    'Phải phục vụ ngành ít nhất **2 tuần** kể từ lúc chính thức làm Cảnh Sát Viên, rời ngành sớm hoặc không làm việc trong thời gian 2 tuần này ' +
+      'sẽ bị phạt **500.000 IC** (bắt buộc phải thanh toán trong vòng 24h) và **Blacklist toàn ngành**. ' +
+      'Khi Offduty không làm nghề bẩn (trừ Cướp Biển Báo - nếu bị bắt phạt x2), không mặc đồ thường lái xe ngành, không mặc đồ ngành lái xe thường, ' +
+      'không sử dụng xe ngành cho mục đích cá nhân, không treo Duty. ' +
+      'Khi Offduty: tuyệt đối không sử dụng bất cứ chức năng ngành nào với bất kì ai, không mặc đồ ngành, không sử dụng quân tư trang của ngành trong mọi tình huống. ' +
+      '**Bắt buộc phải có Bodycam khi tham gia bất kì tình huống nào.**',
+  ],
+];
+const termsEmbed = () =>
+  new EmbedBuilder()
+    .setTitle('📖 TUYỆT ĐỐI TUÂN THỦ & THỎA THUẬN CHẤP HÀNH')
+    .setColor(COLORS.red)
+    .setDescription('Học viên đã được nhận vào làm việc tại Sở Cảnh sát Thành phố Gacha tức là đã đồng ý với các điều kiện sau:')
+    .addFields(TERMS.map(([name, value]) => ({ name, value, inline: false })));
+
 const normHeader = (s) => removeAccents(s).toLowerCase().replace(/[^a-z0-9]+/g, '');
 const btn = (id, label, style, emoji) => {
   const b = new ButtonBuilder().setCustomId(`${ID}:${id}`).setLabel(label).setStyle(style);
@@ -215,13 +255,14 @@ export default class UngTuyen extends Cog {
     if (page === 0) {
       return i.reply(eph('✅ Đã lưu **trang 1/2**. Bấm để điền tiếp trang 2.', [row(btn('p2', 'Điền trang 2', ButtonStyle.Primary, '➡️'))]));
     }
-    // Sau trang 2 = xác nhận nội quy (thay cho câu "Đã đọc nội quy" của Google Form)
-    return i.reply(
-      eph(
-        '📜 **Bước cuối**: xác nhận bạn **đã đọc và đồng ý tuân thủ nội quy GCPD**, rồi bấm nộp đơn.',
-        [row(btn('submit', 'Tôi đã đọc nội quy — Nộp đơn', ButtonStyle.Success, '✅'), btn('p2', 'Sửa trang 2', ButtonStyle.Secondary, '✏️'))],
+    // Sau trang 2 = đọc điều khoản + xác nhận đồng ý (thay cho câu "Đã đọc nội quy" của Google Form)
+    return i.reply({
+      ...eph(
+        '📜 **Bước cuối**: đọc kỹ điều khoản bên dưới. Bấm nộp đơn nghĩa là bạn **đã đọc và đồng ý tuân thủ** toàn bộ điều khoản.',
+        [row(btn('submit', 'Tôi đã đọc & đồng ý — Nộp đơn', ButtonStyle.Success, '✅'), btn('p2', 'Sửa trang 2', ButtonStyle.Secondary, '✏️'))],
       ),
-    );
+      embeds: [termsEmbed()],
+    });
   }
 
   // Bấm "Nộp đơn" cuối: tạo ticket + ghi sheet
