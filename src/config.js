@@ -36,7 +36,7 @@ export const ROOMS = {
   HANDCUFF: '1471744834581827708',
   CLOCKOUT: '1414548963247390770',
   DISPATCH: '1518939026391040050',
-  BANGIAO: '1575571194999214130',
+  BANGIAO: '1373960361832878150',
 
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
@@ -63,6 +63,8 @@ export const UNG_TUYEN = {
   FTO_ROLES: ['FTO'], // Nhận dạy (/nhanday); đóng ticket khi chưa ai nhận dạy hoặc đã bàn giao
   SO_ROLES: ['Sở Trưởng Cảnh Sát', 'Sở Phó Cảnh Sát'], // Được tag khi /bangiao và trong thông báo kênh BANGIAO lúc đóng ticket
   TEACH_TAB: 'Nhan-Day', // Tab lưu nhận dạy trong file tuyển dụng (SHEET_IDS.PHONGVAN), tự tạo nếu chưa có
+  CSV_RANKS: ['CSV'], // /bangiao <momo> chỉ chạy khi momo có chức vụ này (cột E GCPD HOME)
+  REMIND_MIN: 30, // Nhắc Sở trong kênh BANGIAO mỗi N phút nếu chưa ai /nhanbangiao
 };
 
 // Lấy ID kênh cảnh báo: dùng kênh riêng nếu đã điền, không thì rơi về VI_PHAM
