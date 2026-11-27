@@ -205,14 +205,16 @@ function makeInteractionCtx(interaction, name, argStr) {
     try {
       if (first) {
         first = false;
+        // Sửa tin nhắn thì Discord không ping -> nội dung có tag phải là tin MỚI.
+        // Nhưng sau deferReply, followUp ĐẦU TIÊN không tạo tin mới mà THAY tin "đang suy nghĩ"
+        // (bản cũ followUp rồi deleteReply -> xoá mất luôn tin có tag). Nên: sửa tin "đang suy nghĩ"
+        // thành dòng lệnh đã gõ trước, rồi followUp nội dung có tag (lúc này mới là tin mới -> có ping).
+        if (MENTION_RE.test(payload.content ?? '')) {
+          await interaction.editReply({ content: echo || `\`/${name}\`` });
+          return await interaction.followUp(payload);
+        }
         // Hiện lại lệnh + tham số đã gõ (người khác thấy được, checker_blht dựa vào dòng này để tìm dấu /vipham)
         if (echo) payload.content = payload.content ? `${echo}\n${payload.content}` : echo;
-        // Sửa tin nhắn thì Discord không ping -> có mention thì gửi tin mới
-        if (MENTION_RE.test(payload.content ?? '')) {
-          const msg = await interaction.followUp(payload);
-          await interaction.deleteReply().catch(() => {});
-          return msg;
-        }
         return await interaction.editReply(payload);
       }
       return await interaction.followUp(payload);
