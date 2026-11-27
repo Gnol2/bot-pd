@@ -8,6 +8,7 @@ import {
   MessageFlags,
   ModalBuilder,
   PermissionFlagsBits,
+  PermissionsBitField,
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
@@ -24,6 +25,7 @@ import {
 // -> FTO /nhanday (ghi tab Nhan-Day) -> dạy xong /bangiao <momo>: momo phải là CSV trong GCPD HOME
 //    -> báo Sở ở kênh BANGIAO (nhắc mỗi 30 phút) -> Sở /nhanbangiao -> đóng ticket. /dsbangiao xem danh sách.
 // Quyền đóng: chưa ai nhận dạy / đã bàn giao = FTO/Sở/admin · đang dạy = chỉ admin
+// Đóng = hỏi xác nhận -> khoá chat (giữ kênh) -> nút "Xoá ticket" chỉ PD bot admin bấm được
 // ==========================================
 
 // Cột tab Nhan-Day. Cột mới luôn thêm vào CUỐI để dữ liệu cũ không lệch.
@@ -44,7 +46,17 @@ const parseVNTime = (s) => {
 
 const ID = 'ut'; // tiền tố customId của module
 const SESSION_TTL = 30 * 60_000; // form dở dang giữ 30 phút
-const TOPIC_RE = /ut:(\d+)/; // topic kênh ticket: "Đơn ứng tuyển PD · ut:<userId>"
+const TOPIC_RE = /ut:(\d+)/; // topic kênh ticket ĐANG MỞ: "Đơn ứng tuyển PD · ut:<userId>"
+const CLOSED_RE = /utc:(\d+)/; // topic ticket ĐÃ ĐÓNG (khoá chat, chờ admin xoá): "... · utc:<userId>"
+// Quyền bị gỡ khi đóng ticket: không ai nhắn / thả react / tạo thread được nữa (vẫn xem lại được lịch sử)
+const LOCK_PERMS = [
+  PermissionFlagsBits.SendMessages,
+  PermissionFlagsBits.SendMessagesInThreads,
+  PermissionFlagsBits.CreatePublicThreads,
+  PermissionFlagsBits.CreatePrivateThreads,
+  PermissionFlagsBits.AddReactions,
+  PermissionFlagsBits.AttachFiles,
+];
 
 // key = cột trong sheet tuyenpd (khớp theo tên header), long = ô nhập nhiều dòng
 const PAGES = [
@@ -147,6 +159,9 @@ export default class UngTuyen extends Cog {
       if (action === 'p2') return this.showPage(i, 1);
       if (action === 'submit') return this.submit(i);
       if (action === 'close') return this.close(i);
+      if (action === 'closeyes') return this.confirmClose(i);
+      if (action === 'closeno') return i.update({ content: '↩️ Đã huỷ, ticket vẫn mở.', components: [] });
+      if (action === 'delete') return this.deleteTicket(i);
       // Nút Duyệt/Từ chối trên các ticket tạo trước khi bỏ tính năng này
       if (action === 'approve' || action === 'reject') {
         return i.reply(eph('ℹ️ Nút này không còn dùng. Trao đổi kết quả trực tiếp trong kênh, xong thì bấm **Đóng ticket**.'));
@@ -641,17 +656,65 @@ export default class UngTuyen extends Cog {
       : { ok: false, why: `Chỉ ${[...UNG_TUYEN.FTO_ROLES, ...UNG_TUYEN.SO_ROLES].join(', ')} hoặc PD bot admin mới đóng được.` };
   }
 
+  // Bấm "Đóng ticket" -> kiểm tra quyền -> hỏi xác nhận (chỉ người bấm thấy)
   async close(i) {
-    const t = this.ticketInfo(i.channel);
-    if (!t) return i.reply(eph('⚠️ Kênh này không còn là ticket ứng tuyển.'));
+    if (CLOSED_RE.test(i.channel?.topic ?? '')) return i.reply(eph('ℹ️ Ticket này đã đóng. PD bot admin bấm **Xoá ticket** để xoá kênh.'));
+    if (!this.ticketInfo(i.channel)) return i.reply(eph('⚠️ Kênh này không còn là ticket ứng tuyển.'));
     await i.deferReply({ flags: MessageFlags.Ephemeral }); // đọc sheet có thể quá 3 giây
     const check = await this.canClose(i.member, i.channel.id);
     if (!check.ok) return i.editReply(`❌ ${check.why}`);
-    await i.editReply('🔒 Đang đóng ticket...');
-    const { userId } = t;
-    await i.channel.send(`🔒 Ticket sẽ đóng sau **5 giây** (bởi ${i.member}).`);
-    console.log(`[UngTuyen] ${i.member.displayName} đóng đơn của ${userId} (#${i.channel.name})`);
+    return i.editReply({
+      content: '❓ **Bạn có chắc chắn muốn đóng ticket này không?**\nĐóng xong kênh sẽ bị **khoá chat** (không ai nhắn được nữa), kênh vẫn được giữ lại.',
+      components: [row(btn('closeyes', 'Có, đóng ticket', ButtonStyle.Danger, '🔒'), btn('closeno', 'Không', ButtonStyle.Secondary))],
+    });
+  }
+
+  // Bấm "Có" -> khoá chat kênh (giữ kênh) + gửi nút "Xoá ticket" cho PD bot admin
+  async confirmClose(i) {
+    const t = this.ticketInfo(i.channel);
+    if (!t) return i.update({ content: 'ℹ️ Ticket này đã được đóng rồi.', components: [] });
+    await i.deferUpdate();
+    const check = await this.canClose(i.member, i.channel.id); // kiểm tra lại, phòng trạng thái đổi trong lúc chờ bấm
+    if (!check.ok) return i.editReply({ content: `❌ ${check.why}`, components: [] });
+
+    // Gỡ quyền nhắn tin của mọi người/role trong kênh (trừ bot), giữ quyền xem lịch sử
+    const overwrites = i.channel.permissionOverwrites.cache.map((ow) =>
+      ow.id === this.bot.user.id
+        ? { id: ow.id, type: ow.type, allow: ow.allow.bitfield, deny: ow.deny.bitfield }
+        : {
+            id: ow.id,
+            type: ow.type,
+            allow: new PermissionsBitField(ow.allow).remove(LOCK_PERMS).bitfield,
+            deny: new PermissionsBitField(ow.deny).add(LOCK_PERMS).bitfield,
+          },
+    );
+    try {
+      await i.channel.edit({
+        permissionOverwrites: overwrites,
+        topic: `Đơn ứng tuyển PD (đã đóng) · utc:${t.userId}`, // ứng viên được nộp đơn mới
+        reason: `Đóng đơn ứng tuyển (${i.member.displayName})`,
+      });
+    } catch (e) {
+      console.error('[UngTuyen] LỖI khoá kênh:', e.message);
+      const hint = e.code === 50013 ? ' (bot thiếu quyền **Quản lý kênh / Quản lý quyền**)' : '';
+      return i.editReply({ content: `❌ Không khoá được kênh${hint}.`, components: [] });
+    }
+
+    await i.editReply({ content: '✅ Đã đóng ticket.', components: [] });
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.red)
+      .setDescription(`🔒 **Ticket đã đóng** bởi ${i.member}\nThời gian: **${fmt(nowVN(), 'HH:mm DD/MM/YYYY')}**\nKênh đã khoá chat. PD bot admin bấm **Xoá ticket** để xoá kênh.`);
+    await i.channel.send({ embeds: [embed], components: [row(btn('delete', 'Xoá ticket', ButtonStyle.Danger, '🗑️'))] });
+    console.log(`[UngTuyen] ${i.member.displayName} đóng (khoá) đơn của ${t.userId} (#${i.channel.name})`);
+  }
+
+  // Bấm "Xoá ticket" -> chỉ PD bot admin -> xoá kênh
+  async deleteTicket(i) {
+    if (!isBotAdmin(i.member)) return i.reply(eph(`❌ Chỉ **${BOT_ADMIN_ROLE}** mới xoá được ticket.`));
+    if (!CLOSED_RE.test(i.channel?.topic ?? '')) return i.reply(eph('⚠️ Ticket chưa đóng, bấm **Đóng ticket** trước.'));
+    await i.reply(`🗑️ Ticket sẽ bị xoá sau **5 giây** (bởi ${i.member}).`);
+    console.log(`[UngTuyen] ${i.member.displayName} xoá kênh #${i.channel.name}`);
     await this.sleep(5000);
-    await i.channel.delete(`Đóng đơn ứng tuyển (${i.member.displayName})`).catch((e) => console.error('[UngTuyen] LỖI xoá kênh:', e.message));
+    await i.channel.delete(`Xoá đơn ứng tuyển (${i.member.displayName})`).catch((e) => console.error('[UngTuyen] LỖI xoá kênh:', e.message));
   }
 }
