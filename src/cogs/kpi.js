@@ -2,7 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, SHEET_IDS } from '../config.js';
 import {
-  S, at, toInt, cleanMoney, isDigits, money, fmtG, nowVN, addMs, DAY_MS, parseDMY, parseYMDHMS, weekSheetName, currentWeekStartVN, isBotAdmin, callsignOf, layIdTheoCallsign, layMemberTheoCallsign, COLORS, NO_PERM,
+  S, at, toInt, cleanMoney, isDigits, money, fmtG, nowVN, addMs, DAY_MS, parseDMY, parseYMDHMS, weekSheetName, currentWeekStartVN, isBotAdmin, callsignOf, layMemberTheoCallsign, COLORS, NO_PERM,
 } from '../utils.js';
 
 const MEDALS = ['🥇', '🥈', '🥉', '**#4**', '**#5**', '**#6**', '**#7**', '**#8**', '**#9**', '**#10**'];
@@ -102,21 +102,30 @@ export default class KPI extends Cog {
   }
 
   // Tập momo người trong PD (cột momo: tab KPI tuần = B, Online = C, GCPD HOME = C)
+  // Online / GCPD HOME: B callsign, C momo, D tên -> trả thêm callsign + tên theo momo (dùng khi tab KPI thiếu người)
   async pdMomoSet(kpiRows) {
     const set = new Set();
+    const cs = new Map();
+    const name = new Map();
     const add = (v) => {
       const m = S(v).replace(/^'/, '');
       if (isDigits(m)) set.add(m);
+      return m;
     };
     for (const r of kpiRows.slice(1)) add(at(r, 1));
     for (const ws of [this.bot.sheets.online, this.bot.sheets.role]) {
       try {
-        for (const r of (await ws.getAllValues()).slice(1)) add(at(r, 2));
+        for (const r of (await ws.getAllValues()).slice(1)) {
+          const m = add(at(r, 2));
+          if (!m) continue;
+          if (!cs.has(m) && S(at(r, 1))) cs.set(m, S(at(r, 1)));
+          if (!name.has(m) && S(at(r, 3))) name.set(m, S(at(r, 3)).replace(/^[.\s]+/, ''));
+        }
       } catch (e) {
         console.error('[KPI] LỖI đọc danh sách PD:', e.message);
       }
     }
-    return set;
+    return { set, cs, name };
   }
 
   // /top [tuần] — xem bảng xếp hạng trong kênh KPI hoặc TOP_113 (PD bot admin)
@@ -151,7 +160,14 @@ export default class KPI extends Cog {
       /* bỏ qua */
     }
 
+    // Hiển thị "callsign - Tên", không tag người
     const momoToCs = new Map();
+    const momoToName = new Map(); // tên theo tab KPI tuần (cột C), thiếu thì lấy tên người gửi hóa đơn
+    const label = (mid) => {
+      const cs = momoToCurrentCs.get(mid) ?? momoToCs.get(mid) ?? '';
+      const name = momoToName.get(mid) ?? '';
+      return `**${[cs, name].filter(Boolean).join(' - ') || `Momo ${mid}`}**`;
+    };
     const topKpi = [];
     const k = await this.fetchKpiData(w.sheetName);
     const kCol = KPI_COL[kpiFormat(k[0])];
@@ -161,16 +177,16 @@ export default class KPI extends Cog {
       const mid = S(at(row, 1));
       const kn = toInt(at(row, kCol));
       if (mid && cn) momoToCs.set(mid, cn);
-      if (kn > 0) {
-        const act = momoToCurrentCs.get(mid) ?? cn;
-        const uid = layIdTheoCallsign(guild, act);
-        topKpi.push([uid ? `<@${uid}>` : `**[${act}] ${at(row, 2)}**`, mid, kn]);
-      }
+      if (mid && S(at(row, 2))) momoToName.set(mid, S(at(row, 2)));
+      if (kn > 0) topKpi.push([mid, kn]);
     }
-    topKpi.sort((a, b) => b[2] - a[2]);
+    topKpi.sort((a, b) => b[1] - a[1]);
 
     // Momo của người trong PD: tab KPI tuần + sheet Online + GCPD HOME (cột momo)
-    const pdMomos = await this.pdMomoSet(k);
+    const pd = await this.pdMomoSet(k);
+    const pdMomos = pd.set;
+    for (const [m, c] of pd.cs) if (!momoToCs.has(m)) momoToCs.set(m, c);
+    for (const [m, n] of pd.name) if (!momoToName.has(m)) momoToName.set(m, n);
 
     // Sheet Hoa-Don: A thời gian, C momo người gửi (PD), E momo người nhận, G số tiền
     const hd = await this.fetchHoadonData();
@@ -182,6 +198,7 @@ export default class KPI extends Cog {
       const mid = S(h[2]);
       const v = cleanMoney(h[6]);
       if (!isDigits(v)) continue;
+      if (!momoToName.has(mid) && S(h[3])) momoToName.set(mid, S(h[3]));
       const recv = S(h[4]);
       if (recv && !pdMomos.has(recv)) {
         const o = outside.get(mid) ?? { n: 0, sum: 0 };
@@ -191,21 +208,15 @@ export default class KPI extends Cog {
       }
     }
 
-    const nameOf = (mid) => {
-      const act = momoToCurrentCs.get(mid) ?? momoToCs.get(mid) ?? null;
-      const uid = act ? layIdTheoCallsign(guild, act) : null;
-      return uid ? `<@${uid}>` : act ? `**[${act}]**` : `**Momo ${mid}**`;
-    };
-
     const topHd = [...outside.entries()]
-      .map(([mid, o]) => [nameOf(mid), mid, o.n, Math.trunc(o.sum / 1.05)])
-      .sort((a, b) => b[2] - a[2] || b[3] - a[3]);
+      .map(([mid, o]) => [mid, o.n, Math.trunc(o.sum / 1.05)])
+      .sort((a, b) => b[1] - a[1] || b[2] - a[2]);
     const descHd = topHd.length
-      ? topHd.slice(0, 10).map(([d, m, n, t], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **${n} hóa đơn** ($${money(t)})`).join('\n') + '\n'
+      ? topHd.slice(0, 10).map(([m, n, t], i) => `${MEDALS[i]} ${label(m)} - **${n} hóa đơn** ($${money(t)})`).join('\n') + '\n'
       : '📭 Chưa có dữ liệu.\n';
 
     const descKpi = topKpi.length
-      ? topKpi.slice(0, 10).map(([d, m, n], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **${n} vụ**`).join('\n') + '\n'
+      ? topKpi.slice(0, 10).map(([m, n], i) => `${MEDALS[i]} ${label(m)} - **${n} vụ**`).join('\n') + '\n'
       : '📭 Chưa có dữ liệu.\n';
 
     return new EmbedBuilder()

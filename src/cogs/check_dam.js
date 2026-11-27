@@ -333,12 +333,11 @@ export default class CheckDam extends Cog {
     return list.sort((a, b) => b.mins - a.mins);
   }
 
-  renderTop(list, medals, csMap) {
+  // Chỉ ghi "callsign - Tên", không tag người
+  renderTop(list, medals) {
     let t = '';
     list.forEach((u, i) => {
-      const mb = csMap.get(u.cs);
-      const mention = mb ? mb.toString() : `${u.cs} | ${u.name}`;
-      t += `${medals[i]} **${mention}** - \`${this.formatTime(u.mins)}\`\n`;
+      t += `${medals[i]} **${u.cs} - ${u.name || '?'}** - \`${this.formatTime(u.mins)}\`\n`;
     });
     return t || '*(Không có dữ liệu)*\n';
   }
@@ -351,9 +350,8 @@ export default class CheckDam extends Cog {
   }
 
   buildBangVangEmbed(guild) {
-    const csMap = csToMemberMap(guild);
-    const top3 = this.renderTop(this.rankList('daily_113_mins').slice(0, 3), MEDAL_3, csMap) + '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10, csMap);
+    const top3 = this.renderTop(this.rankList('daily_113_mins').slice(0, 3), MEDAL_3) + '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10);
     return new EmbedBuilder()
       .setTitle('🏆 Top đàm 113')
       .setColor(COLORS.gold)
@@ -365,8 +363,7 @@ export default class CheckDam extends Cog {
   }
 
   buildTongKetTuanEmbed(guild) {
-    const csMap = csToMemberMap(guild);
-    const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10, csMap);
+    const top10 = this.renderTop(this.rankList('weekly_113_mins').slice(0, 10), MEDAL_10);
     return new EmbedBuilder()
       .setTitle(`🏆 Tổng kết đàm 113 tuần (${this.weekRangeStr()})`)
       .setDescription(`Top 10 thời gian trực đàm 113 trong tuần:\n\n${top10}`)
