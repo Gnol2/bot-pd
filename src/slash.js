@@ -29,7 +29,6 @@ export const SLASH_META = {
   no: { desc: 'Xác nhận chưa thu được GPLMB', args: '<momo>', required: true },
   kiemtra: { desc: 'Kiểm tra GPLMB', args: '<momo>', required: true },
 
-
   // log_hoadon_113
   quetdulieu: { desc: 'Quét lịch sử hóa đơn vào sheet', args: '[momo] DD/MM/YYYY-DD/MM/YYYY', required: true },
   hoadon: { desc: 'Tính hóa đơn / thưởng 113', args: '[DD/MM-DD/MM] (bỏ trống = tuần này)' },
@@ -41,14 +40,14 @@ export const SLASH_META = {
   helpchamcong: { desc: 'Hướng dẫn chấm công', args: null },
   updatechamcong: { desc: 'Dựng lại giờ trực cả tuần từ kênh Duty', args: '[dd/mm/yyyy] (bỏ trống = tuần này)' },
 
-  // dangky_ca
-  dangky: { desc: 'Đăng ký ca trực', args: '<ca> [ca 2] [ngày] — vd: 8 · 14-16 20-22 mai · 3 18/11', required: true },
-  huyca: { desc: 'Hủy ca trực', args: '<ca> [ngày] — vd: 8 · 14-16 mai', required: true },
-  lichtruc: { desc: 'Xem lịch ca trực trong ngày', args: '[ngày] — vd: mai · 18/11' },
-  cacuatoi: { desc: 'Xem ca mình đã đăng ký 7 ngày tới', args: null },
-  xoaca: { desc: 'Xóa ca của PD khác (quản lý)', args: '<callsign|momo> <ca> [ngày] — vd: 609 8 mai', required: true },
-  help: { desc: 'Danh sách tất cả lệnh của bot', args: null },
-  helpca: { desc: 'Hướng dẫn đăng ký ca', args: null },
+  // // dangky_ca
+  // dangky: { desc: 'Đăng ký ca trực', args: '<ca> [ca 2] [ngày] — vd: 8 · 14-16 20-22 mai · 3 18/11', required: true },
+  // huyca: { desc: 'Hủy ca trực', args: '<ca> [ngày] — vd: 8 · 14-16 mai', required: true },
+  // lichtruc: { desc: 'Xem lịch ca trực trong ngày', args: '[ngày] — vd: mai · 18/11' },
+  // cacuatoi: { desc: 'Xem ca mình đã đăng ký 7 ngày tới', args: null },
+  // xoaca: { desc: 'Xóa ca của PD khác (quản lý)', args: '<callsign|momo> <ca> [ngày] — vd: 609 8 mai', required: true },
+  // help: { desc: 'Danh sách tất cả lệnh của bot', args: null },
+  // helpca: { desc: 'Hướng dẫn đăng ký ca', args: null },
 
   // log_handcuff
   congtay: { desc: 'Thống kê còng tay', args: '<ID> <DD/MM-DD/MM> — vd: 12345 01/11-07/11', required: true },
@@ -65,7 +64,7 @@ export const SLASH_META = {
   updaterole: { desc: 'Quét bù thay đổi chức vụ', args: '[số lượng]' },
 
   // kpi
-  top: { desc: 'Bảng xếp hạng KPI tuần', args: '[tuần] — vd: 31/8-6/9' },
+  top: { desc: 'Bảng xếp hạng tuần (KPI hóa đơn, KPI vụ án)', args: '[tuần] — vd: 31/8-6/9' },
   kpi: { desc: 'Xem KPI', args: '[momo] [tuần] — vd: 12345 31/8-6/9' },
   lamviec: { desc: 'Ping Sĩ quan 0 KPI tuần này', args: null },
 

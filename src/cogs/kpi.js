@@ -42,7 +42,7 @@ function parseWeeklyTime(v) {
   return v;
 }
 
-// KPI tuần: /top, /kpi, /lamviec
+// KPI tuần: /top, /kpi, /lamviec + tự gửi bảng xếp hạng tuần vào TOP_113 lúc 23:59
 export default class KPI extends Cog {
   constructor(bot) {
     super(bot);
@@ -55,6 +55,8 @@ export default class KPI extends Cog {
       kpi: (ctx, a, b) => this.kpi(ctx, a, b),
       lamviec: (ctx) => this.lamviec(ctx),
     };
+    // 23:59 giờ VN = 16:59 UTC: gửi bảng xếp hạng tuần vào TOP_113 (cùng giờ bảng top 113)
+    this.dailyAtUTC('auto_top_kpi', 16, 59, () => this.autoTop());
   }
 
   async fetchKpiData(sheetName) {
@@ -84,97 +86,136 @@ export default class KPI extends Cog {
   }
 
   // ==========================================
-  // /top [tuần]
+  // BẢNG XẾP HẠNG TUẦN (KPI hóa đơn gửi người ngoài PD + KPI vụ án)
+  // Tự gửi vào kênh TOP_113 lúc 23:59 mỗi ngày (cùng lúc bảng top 113); /top xem tay trong kênh KPI
   // ==========================================
-  async top(ctx, sheetNameArg) {
-    if (ctx.channel.id !== ROOMS.KPI) return;
-    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
+  async autoTop() {
+    const ch = this.bot.channels.cache.get(ROOMS.TOP_113);
+    if (!ch) return console.error('[KPI] LỖI: không thấy kênh TOP_113');
+    try {
+      const embed = await this.buildTopEmbed(ch.guild, this.weekInfo());
+      await ch.send({ embeds: [embed] });
+      console.log('[KPI] Đã gửi bảng xếp hạng tuần vào TOP_113');
+    } catch (e) {
+      console.error('[KPI] LỖI gửi bảng xếp hạng tuần:', e.message);
+    }
+  }
 
+  // Tập momo người trong PD (cột momo: tab KPI tuần = B, Online = C, GCPD HOME = C)
+  async pdMomoSet(kpiRows) {
+    const set = new Set();
+    const add = (v) => {
+      const m = S(v).replace(/^'/, '');
+      if (isDigits(m)) set.add(m);
+    };
+    for (const r of kpiRows.slice(1)) add(at(r, 1));
+    for (const ws of [this.bot.sheets.online, this.bot.sheets.role]) {
+      try {
+        for (const r of (await ws.getAllValues()).slice(1)) add(at(r, 2));
+      } catch (e) {
+        console.error('[KPI] LỖI đọc danh sách PD:', e.message);
+      }
+    }
+    return set;
+  }
+
+  // /top [tuần] — xem bảng xếp hạng trong kênh KPI hoặc TOP_113 (PD bot admin)
+  async top(ctx, sheetNameArg) {
+    if (![ROOMS.KPI, ROOMS.TOP_113].includes(ctx.channel.id)) {
+      return ctx.send(`⚠️ Lệnh này chỉ dùng trong <#${ROOMS.KPI}> hoặc <#${ROOMS.TOP_113}>.`);
+    }
+    if (!isBotAdmin(ctx.author)) return ctx.send(NO_PERM);
     const nowMs = Date.now();
     if (this.lastTopTime && nowMs - this.lastTopTime < 10_000) {
       return ctx.send(`⚠️ Bot đang tải dữ liệu, thử lại sau **${Math.trunc(10 - (nowMs - this.lastTopTime) / 1000)}s**.`);
     }
     this.lastTopTime = nowMs;
-
     const w = this.weekInfo(sheetNameArg);
     if (!w) return ctx.send('❌ Tuần không hợp lệ. Ví dụ: `/top 31/8-6/9`');
-    const reqEnd = addMs(w.start, 7 * DAY_MS - 1000);
-
     try {
-      const loading = await ctx.send('⏳ Đang tải bảng xếp hạng...');
-
-      const momoToCurrentCs = new Map();
-      try {
-        if (w.sheetName !== w.currSheet) {
-          const cur = await this.fetchKpiData(w.currSheet);
-          for (const row of cur.slice(1)) if (row.length >= 2) momoToCurrentCs.set(S(row[1]), S(row[0]));
-        }
-      } catch {
-        /* bỏ qua */
-      }
-
-      const momoToCs = new Map();
-      const topKpi = [];
-      const k = await this.fetchKpiData(w.sheetName);
-      const kCol = KPI_COL[kpiFormat(k[0])];
-
-      for (const row of k.slice(1)) {
-        const cn = S(at(row, 0));
-        const mid = S(at(row, 1));
-        const kn = toInt(at(row, kCol));
-        if (mid && cn) momoToCs.set(mid, cn);
-        if (kn > 0) {
-          const act = momoToCurrentCs.get(mid) ?? cn;
-          const uid = layIdTheoCallsign(ctx.guild, act);
-          topKpi.push([uid ? `<@${uid}>` : `**[${act}] ${at(row, 2)}**`, mid, kn]);
-        }
-      }
-      topKpi.sort((a, b) => b[2] - a[2]);
-
-      const hd = await this.fetchHoadonData();
-      const totals = new Map();
-      for (const h of hd.slice(1)) {
-        if (h.length < 7) continue;
-        const d = parseYMDHMS(String(h[0]).replace(/'/g, ''));
-        if (!d || d < w.start || d > reqEnd) continue;
-        const mid = S(h[2]);
-        const v = cleanMoney(h[6]);
-        if (isDigits(v)) totals.set(mid, (totals.get(mid) ?? 0) + parseInt(v, 10));
-      }
-
-      const topMoney = [];
-      for (const [mid, total] of totals) {
-        const tien = Math.trunc(total / 1.05);
-        if (tien <= 0) continue;
-        const cn = momoToCs.get(mid) ?? null;
-        const act = momoToCurrentCs.get(mid) ?? cn;
-        const uid = act ? layIdTheoCallsign(ctx.guild, act) : null;
-        const dName = uid ? `<@${uid}>` : act ? `**[${act}]**` : `**Momo ${mid}**`;
-        topMoney.push([dName, mid, tien]);
-      }
-      topMoney.sort((a, b) => b[2] - a[2]);
-
-      const descMoney = topMoney.length
-        ? topMoney.slice(0, 10).map(([d, m, t], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **$${money(t)}**`).join('\n') + '\n'
-        : '📭 Chưa có dữ liệu.\n';
-      const descKpi = topKpi.length
-        ? topKpi.slice(0, 10).map(([d, m, n], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **${n} vụ**`).join('\n') + '\n'
-        : '📭 Chưa có dữ liệu.\n';
-
-      const embed = new EmbedBuilder()
-        .setTitle(`🏆 Bảng xếp hạng tuần ${w.sheetName}`)
-        .setColor(COLORS.gold)
-        .addFields(
-          { name: '💰 Top 10 tiền hóa đơn', value: descMoney.slice(0, 1024), inline: false },
-          { name: '🕵️ Top 10 KPI vụ án', value: descKpi.slice(0, 1024), inline: false },
-        )
-        .setFooter({ text: 'GCPD • Dữ liệu tự động' });
-
-      await loading.delete().catch(() => {});
-      await ctx.send({ embeds: [embed] });
+      await ctx.send({ embeds: [await this.buildTopEmbed(ctx.guild, w)] });
     } catch (e) {
       await ctx.send(`❌ Lỗi: ${e.message}`);
     }
+  }
+
+  async buildTopEmbed(guild, w) {
+    const reqEnd = addMs(w.start, 7 * DAY_MS - 1000);
+    const momoToCurrentCs = new Map();
+    try {
+      if (w.sheetName !== w.currSheet) {
+        const cur = await this.fetchKpiData(w.currSheet);
+        for (const row of cur.slice(1)) if (row.length >= 2) momoToCurrentCs.set(S(row[1]), S(row[0]));
+      }
+    } catch {
+      /* bỏ qua */
+    }
+
+    const momoToCs = new Map();
+    const topKpi = [];
+    const k = await this.fetchKpiData(w.sheetName);
+    const kCol = KPI_COL[kpiFormat(k[0])];
+
+    for (const row of k.slice(1)) {
+      const cn = S(at(row, 0));
+      const mid = S(at(row, 1));
+      const kn = toInt(at(row, kCol));
+      if (mid && cn) momoToCs.set(mid, cn);
+      if (kn > 0) {
+        const act = momoToCurrentCs.get(mid) ?? cn;
+        const uid = layIdTheoCallsign(guild, act);
+        topKpi.push([uid ? `<@${uid}>` : `**[${act}] ${at(row, 2)}**`, mid, kn]);
+      }
+    }
+    topKpi.sort((a, b) => b[2] - a[2]);
+
+    // Momo của người trong PD: tab KPI tuần + sheet Online + GCPD HOME (cột momo)
+    const pdMomos = await this.pdMomoSet(k);
+
+    // Sheet Hoa-Don: A thời gian, C momo người gửi (PD), E momo người nhận, G số tiền
+    const hd = await this.fetchHoadonData();
+    const outside = new Map(); // momo PD -> { n: số hóa đơn gửi người ngoài PD, sum }
+    for (const h of hd.slice(1)) {
+      if (h.length < 7) continue;
+      const d = parseYMDHMS(String(h[0]).replace(/'/g, ''));
+      if (!d || d < w.start || d > reqEnd) continue;
+      const mid = S(h[2]);
+      const v = cleanMoney(h[6]);
+      if (!isDigits(v)) continue;
+      const recv = S(h[4]);
+      if (recv && !pdMomos.has(recv)) {
+        const o = outside.get(mid) ?? { n: 0, sum: 0 };
+        o.n++;
+        o.sum += parseInt(v, 10);
+        outside.set(mid, o);
+      }
+    }
+
+    const nameOf = (mid) => {
+      const act = momoToCurrentCs.get(mid) ?? momoToCs.get(mid) ?? null;
+      const uid = act ? layIdTheoCallsign(guild, act) : null;
+      return uid ? `<@${uid}>` : act ? `**[${act}]**` : `**Momo ${mid}**`;
+    };
+
+    const topHd = [...outside.entries()]
+      .map(([mid, o]) => [nameOf(mid), mid, o.n, Math.trunc(o.sum / 1.05)])
+      .sort((a, b) => b[2] - a[2] || b[3] - a[3]);
+    const descHd = topHd.length
+      ? topHd.slice(0, 10).map(([d, m, n, t], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **${n} hóa đơn** ($${money(t)})`).join('\n') + '\n'
+      : '📭 Chưa có dữ liệu.\n';
+
+    const descKpi = topKpi.length
+      ? topKpi.slice(0, 10).map(([d, m, n], i) => `${MEDALS[i]} ${d} (Momo: ${m}) - **${n} vụ**`).join('\n') + '\n'
+      : '📭 Chưa có dữ liệu.\n';
+
+    return new EmbedBuilder()
+      .setTitle(`🏆 Bảng xếp hạng tuần ${w.sheetName}`)
+      .setColor(COLORS.gold)
+      .addFields(
+        { name: '🧾 Top 10 KPI hóa đơn', value: descHd.slice(0, 1024), inline: false },
+        { name: '🕵️ Top 10 KPI vụ án', value: descKpi.slice(0, 1024), inline: false },
+      )
+      .setFooter({ text: 'GCPD • Dữ liệu tự động' });
   }
 
   // ==========================================

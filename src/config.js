@@ -42,9 +42,9 @@ export const ROOMS = {
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
   AI: '1572130947216838756', // Kênh trợ lý luật: /ai hoặc @tag bot (module ai)
 
-  // Momo lạ OnDuty, người ngoài dùng còng, còng khi OFF DUTY, sửa MDT trái phép: gửi chung vào VI_PHAM,
-  // mỗi loại 1 màu (xem src/violation.js)
-  VP_DAM: '1575493093736710154', // Danh sách vi phạm đàm cuối ngày (check_dam)
+  // Mọi cảnh báo vi phạm gửi chung vào VI_PHAM, mỗi loại 1 màu (xem src/violation.js):
+  // momo lạ OnDuty, người ngoài dùng còng, còng khi OFF DUTY, sửa MDT trái phép,
+  // đàm 113 trống / quá tải, vi phạm đàm cuối ngày
 };
 
 // Cấp được gọi điều đàm khi đàm 113 trống / quá tải (check_dam), xếp từ CAO xuống THẤP.
@@ -64,9 +64,6 @@ export const UNG_TUYEN = {
   CSV_RANKS: ['CSV'], // /bangiao <momo> chỉ chạy khi momo có chức vụ này (cột E GCPD HOME)
   REMIND_MIN: 30, // Nhắc Sở trong kênh BANGIAO mỗi N phút nếu chưa ai /nhanbangiao
 };
-
-// Lấy ID kênh cảnh báo: dùng kênh riêng nếu đã điền, không thì rơi về VI_PHAM
-export const alertRoom = (key) => ROOMS[key] || ROOMS.VI_PHAM;
 
 export const FIREBASE_URL =
   'https://dispatch-gcpd-default-rtdb.asia-southeast1.firebasedatabase.app/new_dispatch.json';

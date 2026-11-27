@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
-import { ROOMS, alertRoom, DIEU_DAM_RANKS } from '../config.js';
+import { ROOMS, DIEU_DAM_RANKS } from '../config.js';
+import { sendViolation } from '../violation.js';
 import {
-  S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isBotAdmin, roleMention, csToMemberMap, history, cleanRadio, sendTemp, NO_PERM,
+  S, cell, nowVN, fmt, addMs, DAY_MS, weekday, COLORS, hasRole, isBotAdmin, csToMemberMap, history, cleanRadio, NO_PERM,
 } from '../utils.js';
 
 const IMMUNE_MOMO = ['23', '12678', '12510', '3840', '20444', '102']; // Không lưu data
@@ -585,35 +586,29 @@ export default class CheckDam extends Cog {
         await ch113.send({ embeds: [embed] });
       }
 
-      const chVp = this.bot.channels.cache.get(alertRoom('VP_DAM'));
-      if (chVp) {
-        const vpList = [];
-        for (const [cs, d] of Object.entries(this.radioMemory)) {
-          const momo = d.momo ?? '';
-          if (this.isHidden(cs, momo)) continue;
-          if ((d.daily_vi_pham_mins ?? 0) > 0) {
-            vpList.push({ cs, name: d.name, momo, mins: d.daily_vi_pham_mins, details: d.vi_pham_details ?? {} });
-          }
+      const vpList = [];
+      for (const [cs, d] of Object.entries(this.radioMemory)) {
+        const momo = d.momo ?? '';
+        if (this.isHidden(cs, momo)) continue;
+        if ((d.daily_vi_pham_mins ?? 0) > 0) {
+          vpList.push({ cs, name: d.name, momo, mins: d.daily_vi_pham_mins, details: d.vi_pham_details ?? {} });
         }
-        vpList.sort((a, b) => b.mins - a.mins);
-        const top10 = vpList.slice(0, 10);
+      }
+      vpList.sort((a, b) => b.mins - a.mins);
+      const top10 = vpList.slice(0, 10);
 
-        if (top10.length) {
-          const pings = `${roleMention(chVp.guild, 'Sở Trưởng Cảnh Sát')} ${roleMention(chVp.guild, 'Sở Phó Cảnh Sát')}`;
-          let desc = '';
-          top10.forEach((u, i) => {
-            const det = Object.entries(u.details).map(([rad, m]) => `${rad} (${this.formatTime(m)})`);
-            desc += `**#${i + 1}. ${u.cs} | ${u.momo} | ${u.name}** - Tổng: \`${this.formatTime(u.mins)}\`\n└> Chi tiết: ${det.join(', ')}\n\n`;
-          });
-          const embed = new EmbedBuilder()
-            .setTitle(`🚨 Vi phạm đàm ${fmt(now, 'DD/MM/YYYY')}`)
-            .setDescription(
-              `Top 10 onduty ngoài đàm chính (1-9, 113), tính cả không vào đàm.\n\n${desc}`.slice(0, 4096),
-            )
-            .setColor(COLORS.red)
-            .setFooter({ text: 'GCPD Check đàm' });
-          await chVp.send({ content: pings, embeds: [embed] });
-        }
+      if (top10.length) {
+        let desc = '';
+        top10.forEach((u, i) => {
+          const det = Object.entries(u.details).map(([rad, m]) => `${rad} (${this.formatTime(m)})`);
+          desc += `**#${i + 1}. ${u.cs} | ${u.momo} | ${u.name}** - Tổng: \`${this.formatTime(u.mins)}\`\n└> Chi tiết: ${det.join(', ')}\n\n`;
+        });
+        await sendViolation(
+          this.bot,
+          'VI_PHAM_DAM',
+          `Top 10 onduty ngoài đàm chính (1-9, 113), tính cả không vào đàm.\n\n${desc}`.slice(0, 4096),
+          { title: `Vi phạm đàm ${fmt(now, 'DD/MM/YYYY')}`, pingSo: true, time: now },
+        );
       }
 
       // Reset bộ đếm ngày (và tuần nếu là Chủ Nhật), dọn người không còn dữ liệu
@@ -644,18 +639,23 @@ export default class CheckDam extends Cog {
     return mentions.length ? { mentions } : null;
   }
 
-  dieuDamMsg(reason, onduty) {
+  // Gửi cảnh báo đàm 113 (embed màu theo loại) vào VI_PHAM, tag các cấp điều đàm đang onduty.
+  // tempMs: tự xoá sau N ms (để không dồn tin khi báo lặp lại)
+  async sendDieuDam(type, reason, onduty, tempMs) {
     const top = this.findDieuDam(onduty);
     const who = top ? top.mentions.join(' ') : 'cấp quản lý';
-    let msg = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân.\n **Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
-    if (!top) msg += `\n*(Không có ai từ ${DIEU_DAM_RANKS.at(-1).join('/')} trở lên đang onduty)*`;
-    return msg.length > 2000 ? msg.slice(0, 1997) + '...' : msg;
+    let desc = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân.\n**Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
+    if (!top) desc += `\n*(Không có ai từ ${DIEU_DAM_RANKS.at(-1).join('/')} trở lên đang onduty)*`;
+    // Tag phải nằm ngoài embed mới ping được -> chỉ đưa các tag <@id> vào nội dung tin
+    const pings = (top?.mentions ?? []).filter((m) => m.startsWith('<@'));
+    const m = await sendViolation(this.bot, type, desc, { pings });
+    if (m && tempMs) setTimeout(() => m.delete().catch(() => {}), tempMs);
   }
 
   async eyeOf113() {
     try {
-      // Cả 2 cảnh báo (trống / quá tải) gửi vào kênh vi phạm đàm, ping cấp cao nhất đang onduty
-      const channel = this.bot.channels.cache.get(alertRoom('VP_DAM'));
+      // Cả 2 cảnh báo (trống / quá tải) gửi vào kênh VI_PHAM, ping các cấp điều đàm đang onduty
+      const channel = this.bot.channels.cache.get(ROOMS.VI_PHAM);
       if (!channel) return;
 
       const allRows = await this.fetchSheetData();
@@ -690,8 +690,7 @@ export default class CheckDam extends Cog {
       if (count113 === 0) {
         this.empty113Minutes++;
         if (this.empty113Minutes >= 5) {
-          const msg = this.dieuDamMsg('**Đàm 113 đang không có người trực** (5 phút liên tục).', onduty);
-          await sendTemp(channel, msg, 300_000);
+          await this.sendDieuDam('DAM_113_TRONG', '**Đàm 113 đang không có người trực** (5 phút liên tục).', onduty, 300_000);
           this.empty113Minutes = 0;
         }
       } else {
@@ -703,11 +702,11 @@ export default class CheckDam extends Cog {
       //   if (JSON.stringify(this.overload.momos) === JSON.stringify(cur113Momos)) {
       //     this.overload.minutes++;
       //     if (this.overload.minutes >= 30) {
-      //       const msg = this.dieuDamMsg(
+      //       await this.sendDieuDam(
+      //         'DAM_113_QUA_TAI',
       //         `**Đàm 113 đang quá số lượng quy định**: **${count113}** người liên tục hơn 30 phút (${in113.join(', ')}).`,
       //         onduty,
       //       );
-      //       await channel.send(msg);
       //       this.overload.minutes = 0;
       //     }
       //   } else {
