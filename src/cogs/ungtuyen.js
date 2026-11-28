@@ -625,8 +625,11 @@ export default class UngTuyen extends Cog {
     for (const p of this.pendingHandovers(rows)) {
       const key = plainId(p.data[C.CHANNEL]) || `row${p.row}`;
       const handedAt = parseVNTime(p.data[C.HANDED]);
-      const base = this.lastRemind.get(key) ?? handedAt;
-      if (!base || Date.now() - base < every) continue;
+      if (!handedAt && !this.lastRemind.has(key)) continue;
+      // Chưa nhớ lần nhắc nào (vd vừa restart) -> lấy mốc nhắc gần nhất theo lịch giờ bàn giao + N x REMIND_MIN,
+      // để restart không nhắc ngay mà chờ tới mốc kế tiếp
+      if (!this.lastRemind.has(key)) this.lastRemind.set(key, handedAt + Math.floor((Date.now() - handedAt) / every) * every);
+      if (Date.now() - this.lastRemind.get(key) < every) continue;
       const mins = handedAt ? Math.round((Date.now() - handedAt) / 60_000) : '?';
       const momo = plainId(p.data[C.MOMO]);
       await ch
