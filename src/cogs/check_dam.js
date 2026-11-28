@@ -637,14 +637,18 @@ export default class CheckDam extends Cog {
   }
 
   // Gửi cảnh báo đàm 113 (embed màu theo loại) vào VI_PHAM, tag các cấp điều đàm đang onduty.
+  // Không có cấp điều đàm nào onduty -> tag TẤT CẢ PD đang onduty.
   // tempMs: tự xoá sau N ms (để không dồn tin khi báo lặp lại)
   async sendDieuDam(type, reason, onduty, tempMs) {
     const top = this.findDieuDam(onduty);
-    const who = top ? top.mentions.join(' ') : 'cấp quản lý';
-    let desc = `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân.\n**Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
-    if (!top) desc += `\n*(Không có ai từ ${DIEU_DAM_RANKS.at(-1).join('/')} trở lên đang onduty)*`;
+    const mentions = top ? top.mentions : onduty.map((p) => p.mb?.toString() ?? `**${p.cs}**`);
+    const who = mentions.length ? mentions.join(' ') : 'đang onduty';
+    let desc = top
+      ? `🚨 ${reason}\nCác sĩ quan ${who} vui lòng tiến hành điều chuyển 1 cảnh sát viên sang đàm 113 để hỗ trợ người dân.`
+      : `🚨 ${reason}\nKhông có cấp điều đàm (${DIEU_DAM_RANKS.at(-1).join('/')} trở lên) đang onduty. Các PD ${who} vui lòng cử 1 người vào đàm 113 để hỗ trợ người dân.`;
+    desc += `\n**Lưu ý**: Nếu có quá ít PD các bạn có thể ngồi đàm 113 để vừa chạy dispatch vừa hỗ trợ người dân.`;
     // Tag phải nằm ngoài embed mới ping được -> chỉ đưa các tag <@id> vào nội dung tin
-    const pings = (top?.mentions ?? []).filter((m) => m.startsWith('<@'));
+    const pings = mentions.filter((m) => m.startsWith('<@'));
     const m = await sendViolation(this.bot, type, desc, { pings });
     if (m && tempMs) setTimeout(() => m.delete().catch(() => {}), tempMs);
   }
@@ -660,6 +664,7 @@ export default class CheckDam extends Cog {
       const cur113Momos = [];
       const in113 = [];
       const onduty = []; // ứng viên điều đàm: { cs, role, mb }
+      let totalOnduty = 0; // tất cả PD đang onduty (kể cả miễn ping)
       const csMap = csToMemberMap(channel.guild);
 
       for (let idx = 1; idx < allRows.length; idx++) {
@@ -673,6 +678,7 @@ export default class CheckDam extends Cog {
 
         if (!cs || this.isImmune(cs, momo)) continue;
         if (duty !== 'đang onduty') continue;
+        totalOnduty++;
 
         if (radio === '113') {
           count113++;
@@ -684,7 +690,10 @@ export default class CheckDam extends Cog {
       cur113Momos.sort();
 
       // Đàm 113 trống 5 phút liên tục (tin tự xoá sau 5 phút để không dồn tin khi báo lặp lại)
-      if (count113 === 0) {
+      // Không ai onduty -> không cảnh báo
+      if (totalOnduty === 0) {
+        this.empty113Minutes = 0;
+      } else if (count113 === 0) {
         this.empty113Minutes++;
         if (this.empty113Minutes >= 5) {
           await this.sendDieuDam('DAM_113_TRONG', '**Đàm 113 đang không có người trực** (5 phút liên tục).', onduty, 300_000);
