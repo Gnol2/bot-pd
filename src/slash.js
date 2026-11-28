@@ -71,6 +71,13 @@ export const SLASH_META = {
   // ai
   ai: { desc: 'Hỏi trợ lý luật GTA (AI, tra từ Google Sheet luật)', args: '<câu hỏi> — vd: cướp ngân hàng phạt bao nhiêu', required: true },
 
+  // theodoi (chỉ gõ trong room theo dõi đặc biệt)
+  theodoi: { desc: 'Thêm momo vào danh sách theo dõi đặc biệt', args: '<momo> [ghi chú]', required: true },
+  botheodoi: { desc: 'Bỏ momo khỏi danh sách theo dõi đặc biệt', args: '<momo>', required: true },
+  dstheodoi: { desc: 'Danh sách đối tượng + người theo dõi đặc biệt', args: null },
+  themnguoitheodoi: { desc: 'Thêm PD được tag khi đối tượng theo dõi làm dispatch', args: '<callsign> [callsign ...] — vd: 609 234', required: true },
+  bonguoitheodoi: { desc: 'Bỏ PD khỏi danh sách được tag theo dõi', args: '<callsign>', required: true },
+
   // ungtuyen
   ungtuyenpanel: { desc: 'Đặt bảng nút "Nộp đơn" ứng tuyển PD vào kênh này (PD bot admin)', args: null },
   nhanday: { desc: 'Nhận dạy học viên (gõ trong kênh đơn ứng tuyển)', args: null, ephemeral: true }, // trả lời chỉ người gõ thấy
@@ -91,6 +98,7 @@ export const COG_LABELS = {
   check_dam: '📻 Đàm / 113',
   dispatch: '📡 Dispatch',
   ungtuyen: '📝 Ứng tuyển PD',
+  theodoi: '👁️ Theo dõi đặc biệt',
   ai: '🤖 Trợ lý luật AI',
   log_handcuff: '🔗 Còng tay',
   hoadon: '🧾 Quét bù dữ liệu',

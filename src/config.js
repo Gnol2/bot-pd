@@ -41,6 +41,7 @@ export const ROOMS = {
   DIEM_DANH: '1459604562947346736', // Log chấm công: mỗi lần ghi giờ OFF DUTY vào sheet Lương. Để trống '' = tắt
   DANG_KY_CA: '1575566198559613077', // Kênh dùng lệnh đăng ký ca trực (/dangky, /huyca, /lichtruc...). Để trống '' = dùng ở mọi kênh
   AI: '1572130947216838756', // Kênh trợ lý luật: /ai hoặc @tag bot (module ai)
+  THEO_DOI: '1576104663898521793', // Theo dõi đặc biệt: momo trong danh sách nhận dispatch hàng trắng máy bay/trực thăng -> tag các PD được giao theo dõi (module theodoi)
 
   // Mọi cảnh báo vi phạm gửi chung vào VI_PHAM, mỗi loại 1 màu (xem src/violation.js):
   // momo lạ OnDuty, người ngoài dùng còng, còng khi OFF DUTY, sửa MDT trái phép,
@@ -90,6 +91,7 @@ export const COGS = [
   'ungtuyen', // Đơn ứng tuyển PD qua nút Discord (thay cho phongvan theo dõi Google Form, bật lại bằng /load phongvan)
   'sync_gcpd',
   'dispatch_gcpd',
+  'theodoi', // Báo khi momo bị theo dõi nhận dispatch hàng trắng máy bay/trực thăng
   'log_nhansu',
   'dangky_ca',
   'cham_cong',
