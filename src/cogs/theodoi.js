@@ -1,4 +1,4 @@
-import { EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 import { Cog } from '../core/Cog.js';
 import { ROOMS, SHEET_IDS } from '../config.js';
 import { S, fmt, nowVN, toVN, isBotAdmin, NO_PERM, csToMemberMap } from '../utils.js';
@@ -138,15 +138,14 @@ export default class TheoDoi extends Cog {
     return list;
   }
 
-  // Lệnh quản lý chỉ dùng trong room theo dõi, người gõ phải xem được room (hoặc là PD bot admin)
+  // Mọi lệnh theo dõi: chỉ PD bot admin, và chỉ dùng trong room theo dõi
   async guard(ctx) {
-    if (ctx.channel?.id !== ROOMS.THEO_DOI) {
-      await ctx.reply(`⚠️ Lệnh này chỉ dùng trong <#${ROOMS.THEO_DOI}>.`);
+    if (!isBotAdmin(ctx.author)) {
+      await ctx.reply(NO_PERM);
       return false;
     }
-    const canView = ctx.channel.permissionsFor(ctx.author)?.has(PermissionFlagsBits.ViewChannel);
-    if (!canView && !isBotAdmin(ctx.author)) {
-      await ctx.reply(NO_PERM);
+    if (ctx.channel?.id !== ROOMS.THEO_DOI) {
+      await ctx.reply(`⚠️ Lệnh này chỉ dùng trong <#${ROOMS.THEO_DOI}>.`);
       return false;
     }
     return true;
